@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Raw data — keep CSVs out of the repo, they regenerate the tiles
+backend/raw_data/
+*.csv
+
+# Allow the demo CSV if you want to commit one
+!backend/demo_data/*.csv
+
+# Node (in case you add tooling later)
+node_modules/

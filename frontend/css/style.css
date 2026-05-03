@@ -1,0 +1,486 @@
+/* =========================================================================
+   IAMSM — Kolkata Walkability Atlas
+   Stylesheet
+   ========================================================================= */
+
+:root {
+  /* Surfaces */
+  --bg: #0e0f12;
+  --panel: rgba(18, 20, 24, 0.86);
+  --panel-solid: #14161a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Type */
+  --text: #e8e6e1;
+  --text-dim: #9b9890;
+  --text-muted: #5e5c57;
+
+  /* Accent */
+  --accent: #d4a574;
+  --accent-soft: rgba(212, 165, 116, 0.15);
+
+  /* Status */
+  --ok: #65a30d;
+  --warn: #ea580c;
+  --err: #b91c1c;
+
+  /* PWS gradient stops (Very Poor → Excellent) */
+  --c1: #b91c1c; --c2: #ea580c; --c3: #d97706;
+  --c4: #ca8a04; --c5: #65a30d; --c6: #16a34a; --c7: #047857;
+
+  /* Type stack */
+  --serif: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================================================================
+   Map
+   ========================================================================= */
+#map {
+  position: absolute;
+  inset: 0;
+  background: #1a1c20;
+  z-index: 1;
+}
+
+/* Leaflet overrides */
+.leaflet-control-attribution {
+  background: rgba(14, 15, 18, 0.85) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  backdrop-filter: blur(8px);
+}
+.leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+.leaflet-control-zoom {
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+.leaflet-control-zoom a {
+  background: transparent !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-family: var(--sans) !important;
+  font-weight: 300 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+/* =========================================================================
+   Diagnostic pill (top-center status indicator)
+   ========================================================================= */
+.diag {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  background: var(--panel-solid);
+  border: 1px solid var(--border-strong);
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.4s ease;
+}
+.diag .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+.diag.ok .dot { background: var(--ok); animation: none; }
+.diag.err .dot { background: var(--err); animation: none; }
+.diag.fade { opacity: 0.4; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* =========================================================================
+   Header (top-left)
+   ========================================================================= */
+.header {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 18px 22px 16px;
+  max-width: 380px;
+}
+.header .eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.header h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.header h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+.header .subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.header .credit {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* =========================================================================
+   Side panel (top-right)
+   ========================================================================= */
+.side-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 300px;
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.side-panel .section {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.side-panel .section:last-child { border-bottom: none; }
+
+.section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+/* Stats grid */
+.stats-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+}
+.stat .label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.stat .value {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.stat .value .unit {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
+  letter-spacing: 0.05em;
+}
+
+/* Slider */
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.filter-row .range-display {
+  color: var(--accent);
+  font-weight: 500;
+}
+.slider-track {
+  position: relative;
+  height: 32px;
+  margin-bottom: 4px;
+}
+.slider-track input[type=range] {
+  position: absolute;
+  width: 100%;
+  height: 32px;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.slider-track input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel-solid);
+  cursor: grab;
+  margin-top: -6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.slider-track input[type=range]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel-solid);
+  cursor: grab;
+}
+.slider-track .gradient-bar {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right,
+    var(--c1), var(--c2), var(--c3), var(--c4), var(--c5), var(--c6), var(--c7));
+  border-radius: 2px;
+}
+.slider-track .gradient-mask {
+  position: absolute;
+  top: 14px;
+  height: 4px;
+  background: rgba(14, 15, 18, 0.7);
+  border-radius: 2px;
+}
+.filter-bounds {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Toggle buttons */
+.toggle-group {
+  display: flex;
+  gap: 6px;
+}
+.toggle-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 2px;
+}
+.toggle-btn:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.toggle-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Methodology copy */
+.about-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.about-text strong { color: var(--text); font-weight: 500; }
+.about-text + .about-text { margin-top: 8px; }
+
+/* =========================================================================
+   Legend (bottom-left)
+   ========================================================================= */
+.legend {
+  position: absolute;
+  bottom: 24px;
+  left: 16px;
+  z-index: 10;
+  background: var(--panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 18px 12px;
+  min-width: 280px;
+}
+.legend-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.legend-bar {
+  height: 8px;
+  border-radius: 2px;
+  background: linear-gradient(to right,
+    var(--c1), var(--c2), var(--c3), var(--c4), var(--c5), var(--c6), var(--c7));
+  margin-bottom: 6px;
+}
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+.legend-extremes {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.legend-extremes .lo {
+  color: var(--c1);
+  font-style: italic;
+  font-family: var(--serif);
+}
+.legend-extremes .hi {
+  color: var(--c7);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+/* =========================================================================
+   Popup
+   ========================================================================= */
+.leaflet-popup-content-wrapper {
+  background: var(--panel-solid) !important;
+  color: var(--text) !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--border-strong);
+  padding: 0 !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  font-family: var(--sans) !important;
+  min-width: 200px;
+}
+.leaflet-popup-tip { background: var(--panel-solid) !important; }
+.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+  padding: 6px 8px !important;
+}
+
+.popup-score {
+  font-family: var(--serif);
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.popup-score .denom { font-size: 16px; color: var(--text-muted); }
+.popup-rating {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+}
+.popup-row .k { color: var(--text-muted); }
+.popup-row .v { color: var(--text); }
+
+/* =========================================================================
+   Mobile
+   ========================================================================= */
+@media (max-width: 768px) {
+  .header {
+    max-width: calc(100vw - 32px);
+    padding: 14px 16px 12px;
+  }
+  .header h1 { font-size: 22px; }
+  .side-panel {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .legend { display: none; }
+  .diag { top: auto; bottom: 16px; }
+}
+
+/* Subtle grain overlay for atmosphere */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
