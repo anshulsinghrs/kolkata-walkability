@@ -4,8 +4,7 @@
 > derived from Google Street View imagery (Mask2Former computer vision) and
 > stated-preference behavioural modelling.
 
-A static web application inspired by
-[CTstreets](https://miliasv.github.io/CTstreets/), built as part of the
+A static web application built as part of the
 **Integrated Active Mobility Safety Matrix (IAMSM)** PhD research at IIT
 Kharagpur.
 
@@ -130,16 +129,7 @@ contact the author).
 
 ---
 
-## Roadmap
-
-This map is the visualisation layer for **Objective O1** of the IAMSM
-research (extract street-level built-environment indicators). Planned next
-steps:
-
-- **O2** — Layer in VR-derived perceived-safety values per segment
-- **O3** — Composite IAMSM score combining O1 + O2
-- **O4** — Crowdsourced hazard reports overlay (likely needs a real backend
-  on Vercel/Render — outside the GitHub-Pages-only scope of this repo)
+#
 
 ---
 
@@ -148,7 +138,7 @@ steps:
 **Anshul Singh**
 PhD Researcher, [Ranbir & Chitra Gupta School of Infrastructure Design and
 Management](https://www.iitkgp.ac.in/department/IF), IIT Kharagpur
-Supervisors: Dr. Gajanand Sharma, Dr. Arkopal Kishore Goswami
+
 
 ---
 
