@@ -1,17 +1,17 @@
 /**
  * ui-controls.js
  * --------------
- * Wires up the side-panel UI: dual-handle slider, basemap toggles, the
- * status pill, and the live stats. All DOM access is contained here so the
- * rest of the app can stay headless.
+ * Wires up the multi-tab sidebar.
  */
 
 window.UIControls = (function () {
   'use strict';
 
-  // -------------------------------------------------------------------------
+  const CFG = window.IAMSM_CONFIG;
+
+  // -------------------------------------------------------------------
   // Status pill
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
   const diagEl = document.getElementById('diag');
   const diagText = document.getElementById('diag-text');
 
@@ -26,25 +26,44 @@ window.UIControls = (function () {
     }
   }
 
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // Tabs + collapse
+  // -------------------------------------------------------------------
+  function initTabs() {
+    document.querySelectorAll('.tab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.tab;
+        document.querySelectorAll('.tab').forEach((b) => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-pane').forEach((p) => {
+          p.classList.toggle('active', p.dataset.pane === id);
+        });
+      });
+    });
+
+    const collapseBtn = document.getElementById('panel-collapse');
+    const panel = document.getElementById('side-panel');
+    collapseBtn.addEventListener('click', () => {
+      panel.classList.toggle('collapsed');
+      collapseBtn.textContent = panel.classList.contains('collapsed') ? '›' : '‹';
+    });
+  }
+
+  // -------------------------------------------------------------------
   // Stats
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
   const statCount = document.getElementById('stat-count');
   const statMean = document.getElementById('stat-mean');
   const statMedian = document.getElementById('stat-median');
   const statVisible = document.getElementById('stat-visible');
 
   function fmtCount(n) {
-    if (n >= 1000) {
-      return (n / 1000).toFixed(n >= 10000 ? 0 : 1) +
-             '<span class="unit">k</span>';
-    }
+    if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + '<span class="unit">k</span>';
     return n.toString();
   }
-
-  function fmtScore(n) {
-    return `${n.toFixed(1)}<span class="unit">/100</span>`;
-  }
+  function fmtScore(n) { return `${n.toFixed(1)}<span class="unit">/100</span>`; }
 
   function setStatsFromManifest(manifest) {
     const s = manifest.score_stats;
@@ -52,24 +71,22 @@ window.UIControls = (function () {
     statMean.innerHTML   = fmtScore(s.mean);
     statMedian.innerHTML = fmtScore(s.median);
   }
-
-  function setVisibleCount(n) {
-    statVisible.innerHTML = fmtCount(n);
+  function setStatsFromUpload(stats) {
+    statCount.innerHTML  = fmtCount(stats.kept);
+    statMean.innerHTML   = fmtScore(stats.weightMean);
+    statMedian.innerHTML = `${stats.weightMin.toFixed(0)}–${stats.weightMax.toFixed(0)}<span class="unit">range</span>`;
   }
+  function setVisibleCount(n) { statVisible.innerHTML = fmtCount(n); }
 
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
   // Dual-handle range slider
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
   const rMin = document.getElementById('range-min');
   const rMax = document.getElementById('range-max');
   const rDisp = document.getElementById('range-display');
   const maskLo = document.getElementById('mask-lo');
   const maskHi = document.getElementById('mask-hi');
 
-  /**
-   * Register a callback fired (debounced) whenever the user drags either
-   * handle. Receives `{min, max}` as arguments.
-   */
   function onFilterChange(handler) {
     let timer = null;
     function fire() {
@@ -83,7 +100,6 @@ window.UIControls = (function () {
       rDisp.textContent = `${lo} — ${hi}`;
       maskLo.style.width = `${lo}%`;
       maskHi.style.width = `${100 - hi}%`;
-
       clearTimeout(timer);
       timer = setTimeout(() => handler({ min: lo, max: hi }), 80);
     }
@@ -91,25 +107,203 @@ window.UIControls = (function () {
     rMax.addEventListener('input', fire);
   }
 
-  // -------------------------------------------------------------------------
-  // Basemap toggles
-  // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // Basemap cards
+  // -------------------------------------------------------------------
   function onBasemapChange(handler) {
-    document.querySelectorAll('.toggle-btn[data-base]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.toggle-btn[data-base]')
-          .forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        handler(btn.dataset.base);
+    document.querySelectorAll('.basemap-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.basemap-card').forEach((c) => c.classList.remove('active'));
+        card.classList.add('active');
+        handler(card.dataset.base);
       });
     });
   }
 
+  function onPWSToggle(handler) {
+    const chk = document.getElementById('chk-pws');
+    chk.addEventListener('change', () => handler(chk.checked));
+  }
+
+  function onVizModeChange(handler) {
+    document.querySelectorAll('input[name="viz"]').forEach((r) => {
+      r.addEventListener('change', () => { if (r.checked) handler(r.value); });
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Gradient picker + preview
+  // -------------------------------------------------------------------
+  function paintGradientPreview(name) {
+    const stops = CFG.GRADIENT_PRESETS[name] || CFG.GRADIENT_PRESETS.walkability;
+    const css = `linear-gradient(to right, ${stops.map((s) => `rgb(${s.color[0]},${s.color[1]},${s.color[2]}) ${s.t}%`).join(', ')})`;
+    document.getElementById('gradient-preview').style.background = css;
+    const legend = document.getElementById('legend-bar');
+    if (legend) legend.style.background = css;
+  }
+  function onGradientChange(handler) {
+    const sel = document.getElementById('gradient-select');
+    paintGradientPreview(sel.value);
+    sel.addEventListener('change', () => {
+      paintGradientPreview(sel.value);
+      handler(sel.value);
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Style sliders
+  // -------------------------------------------------------------------
+  function onStyleChange(handler) {
+    const radius = document.getElementById('size-slider');
+    const opacity = document.getElementById('opacity-slider');
+    const rD = document.getElementById('radius-display');
+    const oD = document.getElementById('opacity-display');
+    function fire() {
+      const r = parseInt(radius.value, 10);
+      const o = parseInt(opacity.value, 10);
+      rD.textContent = `${r} px`;
+      oD.textContent = `${o}%`;
+      handler({ radius: r, opacity: o / 100 });
+    }
+    radius.addEventListener('input', fire);
+    opacity.addEventListener('input', fire);
+  }
+
+  // -------------------------------------------------------------------
+  // Weights
+  // -------------------------------------------------------------------
+  function onWeightsChange(onLive, onApply, onReset) {
+    document.querySelectorAll('.w-slider').forEach((s) => {
+      s.addEventListener('input', () => {
+        const key = s.dataset.w;
+        const v = parseInt(s.value, 10);
+        const lbl = document.querySelector(`[data-wv="${key}"]`);
+        if (lbl) lbl.textContent = v;
+        window.Weights.set(key, v);
+        if (onLive) onLive(window.Weights.getRaw());
+      });
+    });
+    document.getElementById('btn-apply-weights').addEventListener('click', () => onApply && onApply());
+    document.getElementById('btn-reset-weights').addEventListener('click', () => {
+      window.Weights.reset();
+      const raw = window.Weights.getRaw();
+      for (const k of Object.keys(raw)) {
+        const s = document.querySelector(`.w-slider[data-w="${k}"]`);
+        const lbl = document.querySelector(`[data-wv="${k}"]`);
+        if (s) s.value = raw[k];
+        if (lbl) lbl.textContent = raw[k];
+      }
+      if (onReset) onReset();
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Upload
+  // -------------------------------------------------------------------
+  function onUpload(handler) {
+    const dz = document.getElementById('dropzone');
+    const input = document.getElementById('file-input');
+
+    dz.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      if (input.files && input.files[0]) handler(input.files[0]);
+      input.value = '';
+    });
+    ['dragenter', 'dragover'].forEach((ev) => {
+      dz.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dz.classList.add('drag');
+      });
+    });
+    ['dragleave', 'drop'].forEach((ev) => {
+      dz.addEventListener(ev, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dz.classList.remove('drag');
+      });
+    });
+    dz.addEventListener('drop', (e) => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handler(f);
+    });
+  }
+
+  function showUploadProgress(pct, msg) {
+    const wrap = document.getElementById('upload-status');
+    wrap.hidden = false;
+    document.getElementById('us-bar-fill').style.width = `${Math.round(pct * 100)}%`;
+    document.getElementById('us-msg').textContent = msg || `${Math.round(pct * 100)}%`;
+  }
+  function hideUploadProgress() {
+    document.getElementById('upload-status').hidden = true;
+  }
+
+  function showDetectedColumns(headers, mapping, stats) {
+    const wrap = document.getElementById('detected');
+    const list = document.getElementById('detected-list');
+    wrap.hidden = false;
+    list.innerHTML = '';
+    const roles = ['latitude', 'longitude', 'weightage', 'category',
+                   'timestamp', 'notes', 'image_url', 'hazard_type',
+                   'sidewalk', 'greenery', 'lighting', 'crowdedness', 'crossing_safety'];
+    for (const role of roles) {
+      const col = mapping[role];
+      if (!col && !['latitude', 'longitude', 'weightage'].includes(role)) continue;
+      const li = document.createElement('li');
+      li.className = col ? 'col-ok' : 'col-missing';
+      li.innerHTML = `<span class="role">${role}</span><span class="col">${col || 'not found'}</span>`;
+      list.appendChild(li);
+    }
+    if (stats) {
+      const li = document.createElement('li');
+      li.className = 'col-stats';
+      li.innerHTML = `<span class="role">rows</span><span class="col">${stats.kept.toLocaleString()} / ${stats.total.toLocaleString()} valid</span>`;
+      list.appendChild(li);
+    }
+  }
+  function hideDetectedColumns() {
+    document.getElementById('detected').hidden = true;
+    document.getElementById('detected-list').innerHTML = '';
+  }
+
+  function onMapData(handler) {
+    document.getElementById('btn-map-data').addEventListener('click', handler);
+  }
+  function onClearUpload(handler) {
+    document.getElementById('btn-clear-upload').addEventListener('click', handler);
+  }
+
+  function onExport(handler) {
+    document.querySelectorAll('[data-export]').forEach((btn) => {
+      btn.addEventListener('click', () => handler(btn.dataset.export));
+    });
+  }
+
+  function setLegendTitle(text) {
+    const el = document.getElementById('legend-title');
+    if (el) el.textContent = text;
+  }
+
   return {
     setStatus,
+    initTabs,
     setStatsFromManifest,
+    setStatsFromUpload,
     setVisibleCount,
     onFilterChange,
     onBasemapChange,
+    onPWSToggle,
+    onVizModeChange,
+    onGradientChange,
+    onStyleChange,
+    onWeightsChange,
+    onUpload,
+    showUploadProgress,
+    hideUploadProgress,
+    showDetectedColumns,
+    hideDetectedColumns,
+    onMapData,
+    onClearUpload,
+    onExport,
+    setLegendTitle,
   };
 })();

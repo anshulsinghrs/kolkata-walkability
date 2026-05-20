@@ -1,0 +1,11 @@
+id,latitude,longitude,weightage,category,hazard_type,timestamp,notes,sidewalk,greenery,lighting,crowdedness,crossing_safety
+1,22.5726,88.3639,78,audit,broken_pavement,2024-11-12T08:30:00Z,Survey waypoint near Park Street junction,82,55,70,68,80
+2,22.5731,88.3645,42,audit,no_sidewalk,2024-11-12T08:45:00Z,Pedestrians forced onto carriageway,30,40,45,75,35
+3,22.5740,88.3651,91,audit,exemplary,2024-11-12T09:00:00Z,Recently renovated walkway,95,82,88,40,92
+4,22.5708,88.3622,55,audit,obstruction,2024-11-12T09:18:00Z,Parked vehicles blocking footpath,50,65,52,80,48
+5,22.5754,88.3661,67,audit,uneven,2024-11-12T09:34:00Z,Tree-root displacement; usable but uneven,60,78,62,55,70
+6,22.5689,88.3608,29,audit,flooding_prone,2024-11-12T09:52:00Z,Reported waterlogging during monsoon,25,30,40,60,28
+7,22.5762,88.3673,84,audit,well_lit,2024-11-12T10:10:00Z,High-quality lighting and crossings,80,72,95,38,88
+8,22.5712,88.3649,48,audit,signal_missing,2024-11-12T10:25:00Z,Crossing lacks pedestrian signal,55,48,52,82,30
+9,22.5736,88.3628,73,audit,clean,2024-11-12T10:40:00Z,Well-maintained corridor,75,68,72,52,78
+10,22.5701,88.3667,38,audit,encroachment,2024-11-12T10:58:00Z,Hawker stalls reducing effective width,32,42,48,90,35

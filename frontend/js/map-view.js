@@ -1,9 +1,7 @@
 /**
  * map-view.js
  * -----------
- * Owns the Leaflet map instance and basemap layers. Exposes a small API for
- * the rest of the app to interact with the map (fit bounds, switch base,
- * register click handlers).
+ * Owns the Leaflet map instance and basemap layers.
  */
 
 window.MapView = (function () {
@@ -12,33 +10,41 @@ window.MapView = (function () {
   const CFG = window.IAMSM_CONFIG;
 
   let map = null;
-  /** @type {L.TileLayer | null} */
   let currentBase = null;
-  /** @type {L.TileLayer | null} */
   let darkLabelsLayer = null;
-  /** @type {Object<string, L.TileLayer>} */
   const basemapInstances = {};
 
   function buildBasemaps() {
     const defs = CFG.BASEMAPS;
+    const max = CFG.MAP.MAX_ZOOM;
 
     basemapInstances.dark = L.tileLayer(defs.dark.url, {
       attribution: defs.dark.attribution,
       subdomains: defs.dark.subdomains,
-      maxZoom: CFG.MAP.MAX_ZOOM,
+      maxZoom: max,
     });
     darkLabelsLayer = L.tileLayer(defs.dark.labels, {
       subdomains: defs.dark.subdomains,
-      maxZoom: CFG.MAP.MAX_ZOOM,
+      maxZoom: max,
     });
     basemapInstances.light = L.tileLayer(defs.light.url, {
       attribution: defs.light.attribution,
       subdomains: defs.light.subdomains,
-      maxZoom: CFG.MAP.MAX_ZOOM,
+      maxZoom: max,
+    });
+    basemapInstances.osm = L.tileLayer(defs.osm.url, {
+      attribution: defs.osm.attribution,
+      subdomains: defs.osm.subdomains,
+      maxZoom: max,
     });
     basemapInstances.sat = L.tileLayer(defs.sat.url, {
       attribution: defs.sat.attribution,
-      maxZoom: CFG.MAP.MAX_ZOOM,
+      maxZoom: max,
+    });
+    basemapInstances.topo = L.tileLayer(defs.topo.url, {
+      attribution: defs.topo.attribution,
+      subdomains: defs.topo.subdomains,
+      maxZoom: defs.topo.maxZoom || max,
     });
   }
 
@@ -56,6 +62,7 @@ window.MapView = (function () {
     currentBase = basemapInstances.dark;
     currentBase.addTo(map);
     darkLabelsLayer.addTo(map);
+    document.body.dataset.basemap = 'dark';
 
     return map;
   }
@@ -69,9 +76,8 @@ window.MapView = (function () {
     currentBase.addTo(map);
     currentBase.bringToBack();
 
-    if (key === 'dark') {
-      darkLabelsLayer.addTo(map);
-    }
+    if (key === 'dark') darkLabelsLayer.addTo(map);
+    document.body.dataset.basemap = key;
   }
 
   function fitToBounds(bounds, padding = [40, 40]) {
@@ -79,16 +85,8 @@ window.MapView = (function () {
     map.fitBounds(bounds, { padding });
   }
 
-  function onClick(handler) {
-    if (!map) return;
-    map.on('click', handler);
-  }
-
-  function onMoveEnd(handler) {
-    if (!map) return;
-    map.on('moveend', handler);
-  }
-
+  function onClick(handler) { if (map) map.on('click', handler); }
+  function onMoveEnd(handler) { if (map) map.on('moveend', handler); }
   function getMap() { return map; }
 
   return { init, setBasemap, fitToBounds, onClick, onMoveEnd, getMap };

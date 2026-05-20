@@ -3,17 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Kolkata Perceived Walkability Atlas — street-level walkability scores derived from Google Street View and stated-preference behavioural modelling. PhD research, IIT Kharagpur." />
-<title>Kolkata Walkability — Perceived Walkability Score Atlas</title>
+<meta name="description" content="Kolkata Perceived Walkability Atlas — interactive geospatial urban analytics. Upload CSVs, switch between point / heatmap / cluster views, recompute walkability under custom indicator weights, and export filtered layers. PhD research, IIT Kharagpur." />
+<title>Walkability Atlas — Interactive Urban Analytics</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
+<!-- Leaflet.markercluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <!-- App styles -->
 <link rel="stylesheet" href="css/style.css" />
@@ -27,88 +31,288 @@
   <span id="diag-text">Initialising…</span>
 </div>
 
-<header class="header">
-  <div class="eyebrow">Integrated Active Mobility Safety Matrix</div>
-  <h1>Kolkata <em>Walkability</em><br/>Perception Atlas</h1>
+<!-- ===================== Brand / Header ===================== -->
+<header class="header glass">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#d4a574"/>
+          <stop offset="100%" stop-color="#65a30d"/>
+        </linearGradient>
+      </defs>
+      <circle cx="20" cy="20" r="18" fill="none" stroke="url(#lg)" stroke-width="1.5"/>
+      <path d="M14 28 L14 19 L17 14 L20 19 L20 28" stroke="url(#lg)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M22 28 L22 16 L25 12 L28 16 L28 28" stroke="url(#lg)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="17" cy="11" r="1.8" fill="#d4a574"/>
+      <circle cx="25" cy="9"  r="1.8" fill="#65a30d"/>
+    </svg>
+    <div class="brand-text">
+      <div class="eyebrow">IAMSM · Urban Walkability</div>
+      <h1>Walkability <em>Atlas</em></h1>
+    </div>
+  </div>
   <p class="subtitle">
-    Street-level Perceived Walkability Scores derived from Google Street View
-    imagery via Mask2Former computer vision and stated-preference behavioural
-    modelling.
+    Interactive geospatial analytics for street-level walkability — Mask2Former
+    computer vision, stated-preference modelling, and live CSV-driven overlays.
   </p>
-  <p class="credit">
-    ANSHUL SINGH · IIT KHARAGPUR · RCG SCHOOL OF INFRASTRUCTURE
-  </p>
+  <p class="credit">ANSHUL SINGH · IIT KHARAGPUR · RCG SOID</p>
 </header>
 
-<aside class="side-panel">
-  <section class="section">
-    <h2 class="section-title">Dataset Overview</h2>
-    <div class="stats-wrap">
-      <div class="stat">
-        <div class="label">Points</div>
-        <div class="value" id="stat-count">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">Mean PWS</div>
-        <div class="value" id="stat-mean">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">Median</div>
-        <div class="value" id="stat-median">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">In View</div>
-        <div class="value" id="stat-visible">—</div>
-      </div>
-    </div>
-  </section>
+<!-- ===================== Sidebar (tabs) ===================== -->
+<aside class="side-panel glass" id="side-panel">
+  <button class="panel-collapse" id="panel-collapse" title="Collapse panel" aria-label="Collapse panel">‹</button>
 
-  <section class="section">
-    <h2 class="section-title">Filter by Score</h2>
-    <div class="filter-row">
-      <span>PWS Range</span>
-      <span class="range-display" id="range-display">0 — 100</span>
-    </div>
-    <div class="slider-track">
-      <div class="gradient-bar"></div>
-      <div class="gradient-mask" id="mask-lo" style="left:0;width:0%"></div>
-      <div class="gradient-mask" id="mask-hi" style="right:0;width:0%"></div>
-      <input type="range" id="range-min" min="0" max="100" value="0" step="1" aria-label="Minimum PWS score" />
-      <input type="range" id="range-max" min="0" max="100" value="100" step="1" aria-label="Maximum PWS score" />
-    </div>
-    <div class="filter-bounds"><span>0</span><span>50</span><span>100</span></div>
-  </section>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="data"     role="tab" aria-selected="true">Data</button>
+    <button class="tab"        data-tab="layers"   role="tab">Layers</button>
+    <button class="tab"        data-tab="weights"  role="tab">Weights</button>
+    <button class="tab"        data-tab="map"      role="tab">Map</button>
+    <button class="tab"        data-tab="export"   role="tab">Export</button>
+  </nav>
 
-  <section class="section">
-    <h2 class="section-title">Basemap</h2>
-    <div class="toggle-group">
-      <button class="toggle-btn active" data-base="dark">Dark</button>
-      <button class="toggle-btn" data-base="light">Light</button>
-      <button class="toggle-btn" data-base="sat">Satellite</button>
-    </div>
-  </section>
+  <div class="tab-content">
 
-  <section class="section">
-    <h2 class="section-title">Methodology</h2>
-    <p class="about-text">
-      <strong>PWS</strong> integrates four built-environment indicators
-      extracted from GSV imagery — <em>sidewalk</em>, <em>greenery</em>,
-      <em>streetlight</em>, <em>crowdedness</em> — weighted by coefficients
-      from a binary-logit stated-preference model.
-    </p>
-    <p class="about-text">
-      Higher scores indicate environments perceived as more walkable.
-      Inspired by <strong>CTstreets</strong> (Connecticut Walkability Map).
-    </p>
-  </section>
+    <!-- ============ DATA TAB ============ -->
+    <section class="tab-pane active" data-pane="data">
+      <div class="section">
+        <h2 class="section-title">Dataset Overview</h2>
+        <div class="stats-wrap">
+          <div class="stat">
+            <div class="label">Points</div>
+            <div class="value" id="stat-count">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Mean PWS</div>
+            <div class="value" id="stat-mean">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Median</div>
+            <div class="value" id="stat-median">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">In View</div>
+            <div class="value" id="stat-visible">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Upload Dataset</h2>
+        <div id="dropzone" class="dropzone">
+          <div class="dz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14"/>
+            </svg>
+          </div>
+          <div class="dz-text">
+            <strong>Drop CSV / GeoJSON</strong>
+            <span>or click to browse · max ~50 MB</span>
+          </div>
+          <input type="file" id="file-input" accept=".csv,.geojson,.json,.kml" hidden />
+        </div>
+
+        <div class="upload-status" id="upload-status" hidden>
+          <div class="us-bar"><div class="us-bar-fill" id="us-bar-fill"></div></div>
+          <div class="us-msg" id="us-msg">Parsing…</div>
+        </div>
+
+        <div class="detected" id="detected" hidden>
+          <div class="detected-head">Detected Columns</div>
+          <ul class="detected-list" id="detected-list"></ul>
+          <div class="detected-actions">
+            <button class="btn btn-ghost" id="btn-clear-upload">Clear</button>
+            <button class="btn btn-primary" id="btn-map-data">Map Data</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Filter by Score</h2>
+        <div class="filter-row">
+          <span>PWS Range</span>
+          <span class="range-display" id="range-display">0 — 100</span>
+        </div>
+        <div class="slider-track">
+          <div class="gradient-bar"></div>
+          <div class="gradient-mask" id="mask-lo" style="left:0;width:0%"></div>
+          <div class="gradient-mask" id="mask-hi" style="right:0;width:0%"></div>
+          <input type="range" id="range-min" min="0" max="100" value="0" step="1" aria-label="Minimum PWS score" />
+          <input type="range" id="range-max" min="0" max="100" value="100" step="1" aria-label="Maximum PWS score" />
+        </div>
+        <div class="filter-bounds"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+    </section>
+
+    <!-- ============ LAYERS TAB ============ -->
+    <section class="tab-pane" data-pane="layers">
+      <div class="section">
+        <h2 class="section-title">Base PWS Layer</h2>
+        <div class="toggle-group toggle-stack">
+          <label class="check-row">
+            <input type="checkbox" id="chk-pws" checked />
+            <span>Show research PWS points</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Uploaded Data Visualization</h2>
+        <div class="radio-group" id="viz-mode">
+          <label class="radio-row">
+            <input type="radio" name="viz" value="points" checked />
+            <span><strong>Points</strong><em>Direct rendering</em></span>
+          </label>
+          <label class="radio-row">
+            <input type="radio" name="viz" value="heatmap" />
+            <span><strong>Heatmap</strong><em>Weighted density surface</em></span>
+          </label>
+          <label class="radio-row">
+            <input type="radio" name="viz" value="clusters" />
+            <span><strong>Clusters</strong><em>Spatial aggregation</em></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Color Scale</h2>
+        <select class="select" id="gradient-select" aria-label="Gradient">
+          <option value="walkability">Walkability (Red → Green)</option>
+          <option value="viridis">Viridis</option>
+          <option value="magma">Magma</option>
+          <option value="plasma">Plasma</option>
+          <option value="ice">Ice (Blue scale)</option>
+        </select>
+        <div class="gradient-preview" id="gradient-preview"></div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Point Appearance</h2>
+        <div class="filter-row"><span>Radius</span><span class="range-display" id="radius-display">3 px</span></div>
+        <input type="range" id="size-slider" min="1" max="14" value="3" step="1" class="solo-slider" />
+        <div class="filter-row" style="margin-top:10px"><span>Opacity</span><span class="range-display" id="opacity-display">85%</span></div>
+        <input type="range" id="opacity-slider" min="10" max="100" value="85" step="5" class="solo-slider" />
+      </div>
+    </section>
+
+    <!-- ============ WEIGHTS TAB ============ -->
+    <section class="tab-pane" data-pane="weights">
+      <div class="section">
+        <h2 class="section-title">Indicator Weights</h2>
+        <p class="hint">
+          Recompute walkability live when uploaded data contains indicator columns
+          (<code>sidewalk</code>, <code>greenery</code>, <code>lighting</code>,
+          <code>crowdedness</code>, <code>crossing_safety</code>). Weights are
+          normalised to sum to 1.
+        </p>
+
+        <div class="weight-row">
+          <label>Sidewalk Quality</label>
+          <input type="range" min="0" max="100" value="35" data-w="sidewalk" class="solo-slider w-slider"/>
+          <span class="weight-val" data-wv="sidewalk">35</span>
+        </div>
+        <div class="weight-row">
+          <label>Greenery</label>
+          <input type="range" min="0" max="100" value="20" data-w="greenery" class="solo-slider w-slider"/>
+          <span class="weight-val" data-wv="greenery">20</span>
+        </div>
+        <div class="weight-row">
+          <label>Lighting</label>
+          <input type="range" min="0" max="100" value="15" data-w="lighting" class="solo-slider w-slider"/>
+          <span class="weight-val" data-wv="lighting">15</span>
+        </div>
+        <div class="weight-row">
+          <label>Crowdedness</label>
+          <input type="range" min="0" max="100" value="10" data-w="crowdedness" class="solo-slider w-slider"/>
+          <span class="weight-val" data-wv="crowdedness">10</span>
+        </div>
+        <div class="weight-row">
+          <label>Crossing Safety</label>
+          <input type="range" min="0" max="100" value="20" data-w="crossing_safety" class="solo-slider w-slider"/>
+          <span class="weight-val" data-wv="crossing_safety">20</span>
+        </div>
+
+        <div class="weight-actions">
+          <button class="btn btn-ghost" id="btn-reset-weights">Reset</button>
+          <button class="btn btn-primary" id="btn-apply-weights">Recompute</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MAP TAB ============ -->
+    <section class="tab-pane" data-pane="map">
+      <div class="section">
+        <h2 class="section-title">Basemap</h2>
+        <div class="basemap-grid">
+          <button class="basemap-card active" data-base="dark">
+            <span class="bm-thumb bm-dark"></span><span class="bm-label">Dark</span>
+          </button>
+          <button class="basemap-card" data-base="light">
+            <span class="bm-thumb bm-light"></span><span class="bm-label">Positron</span>
+          </button>
+          <button class="basemap-card" data-base="osm">
+            <span class="bm-thumb bm-osm"></span><span class="bm-label">OSM</span>
+          </button>
+          <button class="basemap-card" data-base="sat">
+            <span class="bm-thumb bm-sat"></span><span class="bm-label">Satellite</span>
+          </button>
+          <button class="basemap-card" data-base="topo">
+            <span class="bm-thumb bm-topo"></span><span class="bm-label">Topo</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Methodology</h2>
+        <p class="about-text">
+          <strong>PWS</strong> integrates four built-environment indicators
+          extracted from GSV imagery — <em>sidewalk</em>, <em>greenery</em>,
+          <em>streetlight</em>, <em>crowdedness</em> — weighted by coefficients
+          from a binary-logit stated-preference model.
+        </p>
+        <p class="about-text">
+          Upload your own CSV to overlay external observations (hazards,
+          incidents, audits) and recombine indicators using the Weights tab.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ EXPORT TAB ============ -->
+    <section class="tab-pane" data-pane="export">
+      <div class="section">
+        <h2 class="section-title">Export Layer</h2>
+        <p class="hint">Exports respect current filters and viewport.</p>
+
+        <div class="export-grid">
+          <button class="btn btn-export" data-export="geojson-visible">
+            <span class="ex-kind">GeoJSON</span>
+            <span class="ex-scope">Visible in view</span>
+          </button>
+          <button class="btn btn-export" data-export="geojson-all">
+            <span class="ex-kind">GeoJSON</span>
+            <span class="ex-scope">All filtered points</span>
+          </button>
+          <button class="btn btn-export" data-export="csv-visible">
+            <span class="ex-kind">CSV</span>
+            <span class="ex-scope">Visible in view</span>
+          </button>
+          <button class="btn btn-export" data-export="png">
+            <span class="ex-kind">PNG</span>
+            <span class="ex-scope">Map snapshot</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
 </aside>
 
-<div class="legend">
-  <h2 class="legend-title">Perceived Walkability Score</h2>
-  <div class="legend-bar"></div>
+<!-- ===================== Legend ===================== -->
+<div class="legend glass">
+  <h2 class="legend-title" id="legend-title">Perceived Walkability Score</h2>
+  <div class="legend-bar" id="legend-bar"></div>
   <div class="legend-labels">
-    <span>0</span><span>15</span><span>30</span><span>45</span>
-    <span>60</span><span>75</span><span>90+</span>
+    <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
   </div>
   <div class="legend-extremes">
     <span class="lo">unwalkable</span>
@@ -116,17 +320,45 @@
   </div>
 </div>
 
+<!-- ===================== Point Detail Drawer ===================== -->
+<aside class="detail-drawer glass" id="detail-drawer" aria-hidden="true">
+  <header class="dd-head">
+    <div>
+      <div class="dd-eyebrow">Point Detail</div>
+      <div class="dd-title" id="dd-title">—</div>
+    </div>
+    <button class="dd-close" id="dd-close" aria-label="Close">×</button>
+  </header>
+  <div class="dd-score-wrap">
+    <div class="dd-score" id="dd-score">—</div>
+    <div class="dd-rating" id="dd-rating">—</div>
+  </div>
+  <div class="dd-body" id="dd-body"></div>
+  <img class="dd-image" id="dd-image" alt="" hidden />
+</aside>
+
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
+<!-- PapaParse -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<!-- Leaflet.heat -->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<!-- Leaflet.markercluster (clustering, built on Leaflet) -->
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-<!-- App modules (order matters — each builds on the previous) -->
+<!-- App modules (order matters) -->
 <script src="js/config.js"></script>
 <script src="js/color-scale.js"></script>
 <script src="js/data-loader.js"></script>
 <script src="js/points-layer.js"></script>
 <script src="js/map-view.js"></script>
+<script src="js/csv-loader.js"></script>
+<script src="js/upload-layer.js"></script>
+<script src="js/weights.js"></script>
+<script src="js/detail-drawer.js"></script>
+<script src="js/export.js"></script>
 <script src="js/ui-controls.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -1,12 +1,36 @@
 # Kolkata Walkability Atlas
 
 > Street-level **Perceived Walkability Scores (PWS)** for the city of Kolkata,
-> derived from Google Street View imagery (Mask2Former computer vision) and
-> stated-preference behavioural modelling.
+> plus a fully interactive geospatial analytics platform for uploading,
+> reweighting, and exporting urban observation datasets.
 
 A static web application built as part of the
 **Integrated Active Mobility Safety Matrix (IAMSM)** PhD research at IIT
 Kharagpur.
+
+## Interactive features (frontend, no backend required)
+
+- **CSV / GeoJSON / KML upload** — drag-and-drop or browse. PapaParse streams
+  large files and the UI surfaces a progress bar plus per-column detection
+  (lat / lon / weightage / category / hazard / timestamp / notes / image_url
+  / indicator columns).
+- **Three visualisation modes** for uploaded data:
+  - **Points** — canvas-rendered, gradient-coloured by weightage
+  - **Heatmap** — Leaflet.heat density surface, weighted by score
+  - **Clusters** — Leaflet.markercluster with mean-score bubbles
+- **Live indicator-weight recompute** — sliders for sidewalk / greenery /
+  lighting / crowdedness / crossing-safety; weights are L1-normalised and
+  applied to any uploaded rows that carry those columns.
+- **Five basemaps** — Dark, CartoDB Positron, OpenStreetMap Standard,
+  Esri Satellite, OpenTopoMap.
+- **Point detail drawer** — click any point for coordinates, score,
+  hazard / category / timestamp, indicator breakdown, notes, and (when
+  provided) an uploaded image preview.
+- **Exports** — GeoJSON (visible or all-filtered), CSV (visible), and a
+  PNG snapshot of the map composite.
+
+A sample dataset for the upload flow ships at
+`frontend/data/sample-upload.csv`.
 
 ---
 
