@@ -1,7 +1,7 @@
 /**
  * config.js
  * ----------
- * Configuration constants for the IAMSM frontend.
+ * Configuration constants for the IAMSM Walkability Atlas frontend.
  *
  * Exposes a single global `IAMSM_CONFIG` object. All modules read from this
  * object — change values here without touching application logic.
@@ -15,19 +15,14 @@ window.IAMSM_CONFIG = {
 
   /* ---- Map ---- */
   MAP: {
-    DEFAULT_CENTER: [22.5675, 88.3700],   // Kolkata
+    DEFAULT_CENTER: [22.5675, 88.3700],
     DEFAULT_ZOOM: 12,
-    MIN_ZOOM: 10,
+    MIN_ZOOM: 3,
     MAX_ZOOM: 19,
-    /**
-     * Below this zoom level, only the sampled overview file is rendered.
-     * At/above this zoom, full-resolution tiles intersecting the viewport
-     * are fetched on demand.
-     */
     OVERVIEW_MAX_ZOOM: 13,
   },
 
-  /* ---- Point rendering ---- */
+  /* ---- Point rendering (research PWS layer) ---- */
   POINT_RADIUS_BY_ZOOM: {
     10: 1.4, 11: 1.6, 12: 2.0, 13: 2.4, 14: 3.0,
     15: 3.4, 16: 4.0, 17: 4.6, 18: 5.4, 19: 6.4,
@@ -52,8 +47,47 @@ window.IAMSM_CONFIG = {
     { t: 100, color: [4, 120, 87],   label: 'Excellent'  },
   ],
 
+  /* ---- Gradient presets for the uploaded layer ---- */
+  GRADIENT_PRESETS: {
+    walkability: [
+      { t: 0,   color: [185, 28, 28] },
+      { t: 25,  color: [217, 119, 6] },
+      { t: 50,  color: [202, 138, 4] },
+      { t: 75,  color: [101, 163, 13] },
+      { t: 100, color: [4, 120, 87]  },
+    ],
+    viridis: [
+      { t: 0,   color: [68, 1, 84]    },
+      { t: 25,  color: [59, 82, 139]  },
+      { t: 50,  color: [33, 145, 140] },
+      { t: 75,  color: [94, 201, 98]  },
+      { t: 100, color: [253, 231, 37] },
+    ],
+    magma: [
+      { t: 0,   color: [0, 0, 4]      },
+      { t: 25,  color: [80, 18, 123]  },
+      { t: 50,  color: [182, 54, 121] },
+      { t: 75,  color: [251, 136, 97] },
+      { t: 100, color: [252, 253, 191]},
+    ],
+    plasma: [
+      { t: 0,   color: [13, 8, 135]   },
+      { t: 25,  color: [126, 3, 168]  },
+      { t: 50,  color: [204, 71, 120] },
+      { t: 75,  color: [248, 149, 64] },
+      { t: 100, color: [240, 249, 33] },
+    ],
+    ice: [
+      { t: 0,   color: [12, 24, 64]   },
+      { t: 25,  color: [33, 76, 138]  },
+      { t: 50,  color: [78, 137, 196] },
+      { t: 75,  color: [165, 209, 240]},
+      { t: 100, color: [240, 249, 255]},
+    ],
+  },
+
   /* ---- Tile cache ---- */
-  TILE_CACHE_LIMIT: 64,   // max number of tile JSONs held in memory
+  TILE_CACHE_LIMIT: 64,
 
   /* ---- Basemap providers (no API key required) ---- */
   BASEMAPS: {
@@ -65,12 +99,61 @@ window.IAMSM_CONFIG = {
     },
     light: {
       url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      attribution: '© OpenStreetMap · © CARTO',
+      attribution: '© OpenStreetMap · © CARTO (Positron)',
       subdomains: 'abcd',
+    },
+    osm: {
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap contributors',
+      subdomains: 'abc',
     },
     sat: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '© Esri · Maxar · Earthstar Geographics',
     },
+    topo: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap · © OpenTopoMap (CC-BY-SA)',
+      subdomains: 'abc',
+      maxZoom: 17,
+    },
+  },
+
+  /* ---- Defaults for uploaded layer rendering ---- */
+  UPLOAD: {
+    DEFAULT_RADIUS: 5,
+    DEFAULT_OPACITY: 0.85,
+    HEATMAP_RADIUS: 22,
+    HEATMAP_BLUR: 18,
+    CLUSTER_RADIUS: 60,
+    MAX_RENDER_HINT: 200000,
+  },
+
+  /* ---- Default indicator weights (sum normalised to 1 at apply-time) ---- */
+  DEFAULT_WEIGHTS: {
+    sidewalk: 35,
+    greenery: 20,
+    lighting: 15,
+    crowdedness: 10,
+    crossing_safety: 20,
+  },
+
+  /* ---- Column-detection synonyms ----
+   * Lowercase substrings that map to a canonical column role.
+   */
+  COLUMN_SYNONYMS: {
+    latitude:  ['latitude', 'lat', 'y'],
+    longitude: ['longitude', 'lng', 'lon', 'long', 'x'],
+    weightage: ['weightage', 'weight', 'score', 'pws', 'walkability', 'value'],
+    category:  ['category', 'class', 'type', 'tag'],
+    timestamp: ['timestamp', 'time', 'date', 'datetime'],
+    notes:     ['notes', 'note', 'comment', 'remark', 'description'],
+    image_url: ['image_url', 'image', 'photo', 'img', 'picture'],
+    hazard_type: ['hazard_type', 'hazard', 'incident'],
+    sidewalk: ['sidewalk'],
+    greenery: ['greenery', 'green', 'vegetation'],
+    lighting: ['lighting', 'streetlight', 'light'],
+    crowdedness: ['crowdedness', 'crowd', 'density'],
+    crossing_safety: ['crossing_safety', 'crossing', 'safety'],
   },
 };
