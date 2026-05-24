@@ -49,6 +49,15 @@ window.UIControls = (function () {
       panel.classList.toggle('collapsed');
       collapseBtn.textContent = panel.classList.contains('collapsed') ? '›' : '‹';
     });
+
+    const mobileToggle = document.getElementById('mobile-panel-toggle');
+    if (mobileToggle) {
+      mobileToggle.addEventListener('click', () => {
+        const isOpen = panel.classList.toggle('mobile-open');
+        panel.classList.remove('collapsed');
+        mobileToggle.classList.toggle('active', isOpen);
+      });
+    }
   }
 
   // -------------------------------------------------------------------
