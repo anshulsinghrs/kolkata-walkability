@@ -49,6 +49,15 @@ window.UIControls = (function () {
       panel.classList.toggle('collapsed');
       collapseBtn.textContent = panel.classList.contains('collapsed') ? '›' : '‹';
     });
+
+    const mobileToggle = document.getElementById('mobile-panel-toggle');
+    if (mobileToggle) {
+      mobileToggle.addEventListener('click', () => {
+        const isOpen = panel.classList.toggle('mobile-open');
+        panel.classList.remove('collapsed');
+        mobileToggle.classList.toggle('active', isOpen);
+      });
+    }
   }
 
   // -------------------------------------------------------------------
@@ -283,6 +292,64 @@ window.UIControls = (function () {
     if (el) el.textContent = text;
   }
 
+  // -------------------------------------------------------------------
+  // 3D / VR controls
+  // -------------------------------------------------------------------
+  function on3DEnter(handler) {
+    document.getElementById('btn-enter-3d').addEventListener('click', handler);
+  }
+  function on3DExit(handler) {
+    const btnSidebar = document.getElementById('btn-exit-3d');
+    const btnOverlay = document.getElementById('btn-exit-3d-overlay');
+    btnSidebar.addEventListener('click', handler);
+    btnOverlay.addEventListener('click', handler);
+  }
+  function show3DExitButton() {
+    document.getElementById('btn-exit-3d').hidden = false;
+    document.getElementById('btn-enter-3d').hidden = true;
+  }
+  function hide3DExitButton() {
+    document.getElementById('btn-exit-3d').hidden = true;
+    document.getElementById('btn-enter-3d').hidden = false;
+  }
+  function onVREnter(handler) {
+    document.getElementById('btn-enter-vr').addEventListener('click', handler);
+  }
+  function setVRStatus(supported) {
+    const btn = document.getElementById('btn-enter-vr');
+    const text = document.getElementById('vr-status-text');
+    if (supported) {
+      btn.disabled = false;
+      text.textContent = 'Enter Virtual Reality';
+    } else {
+      btn.disabled = true;
+      text.textContent = 'VR Not Available';
+    }
+  }
+  function on3DSettings(handler) {
+    const heightSlider = document.getElementById('height-slider');
+    const fovSlider = document.getElementById('fov-slider');
+    const fogSlider = document.getElementById('fog-slider');
+    const heightDisp = document.getElementById('height-display');
+    const fovDisp = document.getElementById('fov-display');
+    const fogDisp = document.getElementById('fog-display');
+    heightSlider.addEventListener('input', () => {
+      const v = parseInt(heightSlider.value, 10);
+      heightDisp.textContent = (v / 10).toFixed(1) + 'x';
+      handler({ height: v, fov: parseInt(fovSlider.value, 10), fog: parseInt(fogSlider.value, 10) });
+    });
+    fovSlider.addEventListener('input', () => {
+      const v = parseInt(fovSlider.value, 10);
+      fovDisp.textContent = v + '°';
+      handler({ height: parseInt(heightSlider.value, 10), fov: v, fog: parseInt(fogSlider.value, 10) });
+    });
+    fogSlider.addEventListener('input', () => {
+      const v = parseInt(fogSlider.value, 10);
+      fogDisp.textContent = v + '%';
+      handler({ height: parseInt(heightSlider.value, 10), fov: parseInt(fovSlider.value, 10), fog: v });
+    });
+  }
+
   return {
     setStatus,
     initTabs,
@@ -305,5 +372,12 @@ window.UIControls = (function () {
     onClearUpload,
     onExport,
     setLegendTitle,
+    on3DEnter,
+    on3DExit,
+    show3DExitButton,
+    hide3DExitButton,
+    onVREnter,
+    setVRStatus,
+    on3DSettings,
   };
 })();

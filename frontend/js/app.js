@@ -168,6 +168,53 @@
     U.onMapData(mapParsedData);
     U.onClearUpload(clearUpload);
 
+    // ---- 3D / VR ----------------------------------------------------------
+    function get3DData() {
+      const uploadRows = window.UploadLayer.getRows();
+      if (uploadRows && uploadRows.length > 0) {
+        return uploadRows.map((r) => [r.longitude, r.latitude, r.weightage || 50]);
+      }
+      return window.DataLoader.getOverview() || [];
+    }
+
+    U.on3DEnter(() => {
+      const data = get3DData();
+      if (!data || data.length === 0) {
+        U.setStatus('No data to visualize in 3D', 'err');
+        return;
+      }
+      window.ThreeScene.enter(data);
+      U.show3DExitButton();
+      U.setStatus(`3D mode — ${data.length.toLocaleString()} points`, 'ok');
+    });
+    U.on3DExit(() => {
+      window.ThreeScene.exit();
+      U.hide3DExitButton();
+      U.setStatus('Returned to 2D map', 'ok');
+    });
+    U.on3DSettings((s) => {
+      window.ThreeScene.setHeightScale(s.height);
+      window.ThreeScene.setFOV(s.fov);
+      window.ThreeScene.setFogDensity(s.fog);
+    });
+
+    window.ThreeScene.checkVRSupport().then((supported) => {
+      U.setVRStatus(supported);
+    });
+    U.onVREnter(() => {
+      if (!window.ThreeScene.isRunning()) {
+        const data = get3DData();
+        if (!data || data.length === 0) {
+          U.setStatus('Launch 3D view first', 'err');
+          return;
+        }
+        window.ThreeScene.enter(data);
+        U.show3DExitButton();
+      }
+      window.ThreeScene.enterVR();
+      U.setStatus('Entering VR…', 'ok');
+    });
+
     U.onExport(async (kind) => {
       try {
         await window.Exporter.run(kind, {
