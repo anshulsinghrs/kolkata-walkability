@@ -74,6 +74,7 @@
     <button class="tab active" data-tab="data"     role="tab" aria-selected="true">Data</button>
     <button class="tab"        data-tab="layers"   role="tab">Layers</button>
     <button class="tab"        data-tab="weights"  role="tab">Weights</button>
+    <button class="tab"        data-tab="3d"       role="tab">3D/VR</button>
     <button class="tab"        data-tab="map"      role="tab">Map</button>
     <button class="tab"        data-tab="export"   role="tab">Export</button>
   </nav>
@@ -246,6 +247,68 @@
       </div>
     </section>
 
+    <!-- ============ 3D / VR TAB ============ -->
+    <section class="tab-pane" data-pane="3d">
+      <div class="section">
+        <h2 class="section-title">3D Walkability View</h2>
+        <p class="hint">
+          Explore walkability scores as a 3D cityscape. Each column represents a data
+          point — height encodes PWS score, color maps to the gradient scale.
+        </p>
+        <div class="vr-actions">
+          <button class="btn btn-primary" id="btn-enter-3d">Launch 3D View</button>
+          <button class="btn btn-ghost" id="btn-exit-3d" hidden>Exit 3D</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Avatar Controls</h2>
+        <p class="hint">
+          Walk through the city with WASD keys. Mouse to look around.
+          Click on buildings to inspect their walkability score.
+        </p>
+        <div class="avatar-controls">
+          <div class="control-key-grid">
+            <span></span><kbd>W</kbd><span></span>
+            <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+          </div>
+          <div class="control-legend-list">
+            <div class="ctrl-item"><kbd>W</kbd><span>Move forward</span></div>
+            <div class="ctrl-item"><kbd>S</kbd><span>Move backward</span></div>
+            <div class="ctrl-item"><kbd>A</kbd><span>Strafe left</span></div>
+            <div class="ctrl-item"><kbd>D</kbd><span>Strafe right</span></div>
+            <div class="ctrl-item"><kbd>Space</kbd><span>Jump</span></div>
+            <div class="ctrl-item"><kbd>Shift</kbd><span>Run</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Virtual Reality</h2>
+        <p class="hint">
+          Enter immersive VR mode with a compatible headset (Quest, Vive, etc.)
+          via WebXR. Walk naturally through the 3D walkability landscape.
+        </p>
+        <button class="btn btn-vr" id="btn-enter-vr" disabled>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 10a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2h-3.5l-1.5 2h-4l-1.5-2H4a2 2 0 01-2-2v-4z"/>
+            <circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/>
+          </svg>
+          <span id="vr-status-text">Checking VR Support…</span>
+        </button>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">3D Settings</h2>
+        <div class="filter-row"><span>Column Height</span><span class="range-display" id="height-display">1.0x</span></div>
+        <input type="range" id="height-slider" min="1" max="30" value="10" step="1" class="solo-slider" />
+        <div class="filter-row" style="margin-top:12px"><span>Camera FOV</span><span class="range-display" id="fov-display">60°</span></div>
+        <input type="range" id="fov-slider" min="40" max="110" value="60" step="5" class="solo-slider" />
+        <div class="filter-row" style="margin-top:12px"><span>Ground Fog</span><span class="range-display" id="fog-display">50%</span></div>
+        <input type="range" id="fog-slider" min="0" max="100" value="50" step="5" class="solo-slider" />
+      </div>
+    </section>
+
     <!-- ============ MAP TAB ============ -->
     <section class="tab-pane" data-pane="map">
       <div class="section">
@@ -327,6 +390,19 @@
   </div>
 </div>
 
+<!-- ===================== 3D Viewport ===================== -->
+<div id="three-container" class="three-container" hidden>
+  <canvas id="three-canvas"></canvas>
+  <div class="three-hud glass" id="three-hud">
+    <div class="hud-crosshair">+</div>
+    <div class="hud-info" id="hud-info"></div>
+    <div class="hud-instructions" id="hud-instructions">
+      Click to start — WASD to move, Mouse to look, Space to jump
+    </div>
+  </div>
+  <button class="btn btn-ghost three-exit-btn" id="btn-exit-3d-overlay">Exit 3D</button>
+</div>
+
 <!-- ===================== Point Detail Drawer ===================== -->
 <aside class="detail-drawer glass" id="detail-drawer" aria-hidden="true">
   <header class="dd-head">
@@ -354,6 +430,8 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <!-- Leaflet.markercluster (clustering, built on Leaflet) -->
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<!-- Three.js (3D engine) -->
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <!-- App modules (order matters) -->
 <script src="js/config.js"></script>
@@ -366,6 +444,7 @@
 <script src="js/weights.js"></script>
 <script src="js/detail-drawer.js"></script>
 <script src="js/export.js"></script>
+<script src="js/three-scene.js"></script>
 <script src="js/ui-controls.js"></script>
 <script src="js/app.js"></script>
 </body>

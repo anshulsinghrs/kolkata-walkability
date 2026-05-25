@@ -1205,6 +1205,202 @@ body[data-basemap="topo"] .legend {
 .cluster-bubble:hover { transform: scale(1.08); }
 
 /* =========================================================================
+   3D / VR Tab
+   ========================================================================= */
+.vr-actions {
+  display: flex;
+  gap: 10px;
+}
+.vr-actions .btn { flex: 1; }
+
+.avatar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-key-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  gap: 4px;
+  justify-content: center;
+}
+.control-key-grid kbd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+.control-key-grid span {
+  width: 40px;
+  height: 36px;
+}
+
+.control-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ctrl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.ctrl-item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.btn-vr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(101,163,13,0.12), rgba(4,120,87,0.12));
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-vr:hover:not(:disabled) {
+  border-color: var(--c5);
+  background: linear-gradient(135deg, rgba(101,163,13,0.2), rgba(4,120,87,0.2));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(101,163,13,0.2);
+}
+.btn-vr:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-vr svg {
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   3D Viewport (fullscreen overlay)
+   ========================================================================= */
+.three-container {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0a0b0e;
+}
+.three-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.three-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.hud-crosshair {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.4);
+  text-shadow: 0 0 8px rgba(0,0,0,0.8);
+  line-height: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hud-info {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  background: var(--panel-deep);
+  border: 1px solid var(--border-strong);
+  padding: 10px 20px;
+  border-radius: 100px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+.hud-instructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  background: var(--panel-deep);
+  border: 1px solid var(--border-strong);
+  padding: 18px 28px;
+  border-radius: var(--radius);
+  text-align: center;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-glass);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.three-exit-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 101;
+  pointer-events: auto;
+  border-color: var(--border-strong);
+  background: var(--panel-deep);
+  backdrop-filter: blur(10px);
+}
+.three-exit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* =========================================================================
    Responsive — Tablet (601px–900px)
    ========================================================================= */
 @media (max-width: 1100px) {
