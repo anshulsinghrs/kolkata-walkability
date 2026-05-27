@@ -1,9 +1,4 @@
-/**
- * app.js
- * ------
- * Bootstraps the Walkability Atlas — connects MapView, DataLoader/PWS layer,
- * UploadLayer, Weights, DetailDrawer, Exporter, and UIControls.
- */
+// app.js — bootstraps the Walkability Atlas
 
 (function () {
   'use strict';
@@ -115,6 +110,7 @@
         : `✓ Mapped ${recomputed.length.toLocaleString()} points`,
       'ok'
     );
+    hideWelcome();
   }
 
   function clearUpload() {
@@ -124,6 +120,19 @@
     U.hideDetectedColumns();
     U.hideUploadProgress();
     U.setLegendTitle('Perceived Walkability Score');
+    showWelcome();
+  }
+
+  function hideWelcome() {
+    var el = document.getElementById('welcome-overlay');
+    if (el) el.classList.add('hidden');
+  }
+
+  function showWelcome() {
+    var el = document.getElementById('welcome-overlay');
+    if (el && !window.DataLoader.getManifest() && (!parsedRows || !parsedRows.length)) {
+      el.classList.remove('hidden');
+    }
   }
 
   // ---- Bootstrap ------------------------------------------------------
@@ -167,6 +176,9 @@
     U.onUpload(handleFile);
     U.onMapData(mapParsedData);
     U.onClearUpload(clearUpload);
+
+    var dismissBtn = document.getElementById('welcome-dismiss');
+    if (dismissBtn) dismissBtn.addEventListener('click', hideWelcome);
 
     // ---- 3D / VR ----------------------------------------------------------
     function get3DData() {
@@ -233,11 +245,18 @@
       U.setStatus('Loading manifest…');
       manifest = await window.DataLoader.loadManifest();
     } catch (err) {
-      console.error(err);
-      U.setStatus('⚠ Manifest missing — upload a CSV to begin', 'err');
+      console.log('No pre-built data found — ready for CSV upload');
+      U.setStatus('Ready — upload a CSV to get started', 'ok');
+      showWelcome();
+
+      window.__iamsm = {
+        map, pwsLayer, dataLoader: window.DataLoader,
+        uploadLayer: window.UploadLayer, manifest: null,
+      };
       return;
     }
 
+    hideWelcome();
     U.setStatsFromManifest(manifest);
     window.MapView.fitToBounds([
       [manifest.bounds.min_lat, manifest.bounds.min_lon],

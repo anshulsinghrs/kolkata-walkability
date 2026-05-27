@@ -26,6 +26,35 @@
 
 <div id="map"></div>
 
+<!-- Welcome overlay (shown when no data is loaded) -->
+<div class="welcome-overlay" id="welcome-overlay">
+  <div class="welcome-card">
+    <div class="welcome-icon">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    </div>
+    <h2>Welcome to the <em>Atlas</em></h2>
+    <p>Upload walkability data to visualize street-level conditions across Kolkata with interactive maps, heatmaps, and 3D views.</p>
+    <div class="welcome-steps">
+      <div class="welcome-step">
+        <span class="step-num">1</span>
+        <span>Upload a CSV with <span class="welcome-kbd">lat</span>, <span class="welcome-kbd">lng</span>, <span class="welcome-kbd">score</span> columns</span>
+      </div>
+      <div class="welcome-step">
+        <span class="step-num">2</span>
+        <span>Switch between point, heatmap, and cluster views</span>
+      </div>
+      <div class="welcome-step">
+        <span class="step-num">3</span>
+        <span>Adjust indicator weights and export filtered data</span>
+      </div>
+    </div>
+    <button class="welcome-dismiss" id="welcome-dismiss">Explore the map</button>
+  </div>
+</div>
+
 <div class="diag" id="diag" role="status" aria-live="polite">
   <span class="dot"></span>
   <span id="diag-text">Initialising…</span>
