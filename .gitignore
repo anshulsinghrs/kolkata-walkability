@@ -19,6 +19,9 @@ Thumbs.db
 backend/raw_data/
 *.csv
 
+# Generated frontend data (tiles, manifest, overview) — regenerate via backend/process_data.py
+frontend/data/
+
 # Allow the demo CSV if you want to commit one
 !backend/demo_data/*.csv
 
