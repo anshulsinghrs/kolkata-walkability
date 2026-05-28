@@ -1,14 +1,14 @@
 /**
  * app.js
  * ------
- * Bootstraps the Walkability Atlas — connects MapView, DataLoader/PWS layer,
+ * Bootstraps UrbanPulse — connects MapView, CitySearch, DataLoader/PWS layer,
  * UploadLayer, Weights, DetailDrawer, Exporter, and UIControls.
  */
 
 (function () {
   'use strict';
 
-  const CFG = window.IAMSM_CONFIG;
+  const CFG = window.URBANPULSE_CONFIG;
   const U = window.UIControls;
 
   let pwsLayer = null;
@@ -227,36 +227,33 @@
       }
     });
 
-    // ---- Research data load --------------------------------------------
-    let manifest;
-    try {
-      U.setStatus('Loading manifest…');
-      manifest = await window.DataLoader.loadManifest();
-    } catch (err) {
-      console.error(err);
-      U.setStatus('⚠ Manifest missing — upload a CSV to begin', 'err');
-      return;
-    }
+    // ---- City search (Nominatim) ---------------------------------------
+    window.CitySearch.bindUI({
+      inputId: 'city-search-input',
+      resultsId: 'city-search-results',
+      onStatus: (msg, kind) => U.setStatus(msg, kind),
+    });
+    window.CitySearch.onSelect((place) => {
+      if (place.bbox) {
+        window.MapView.fitToBounds(place.bbox, [60, 60]);
+      } else if (place.center) {
+        window.MapView.getMap().setView(place.center, 13);
+      }
+      U.setStatus(`✓ Viewing ${place.name}`, 'ok');
+      U.setLegendTitle(`Walkability — ${place.name}`);
+      // Future: trigger backend OSMnx fetch for this place's road network
+      // and walkability scoring here. For now the city search re-frames the
+      // basemap; the upload pipeline and any research overlay continue
+      // to work unchanged.
+    });
 
-    U.setStatsFromManifest(manifest);
-    window.MapView.fitToBounds([
-      [manifest.bounds.min_lat, manifest.bounds.min_lon],
-      [manifest.bounds.max_lat, manifest.bounds.max_lon],
-    ]);
-
-    try {
-      U.setStatus(`Loading overview (${manifest.overview.count.toLocaleString()} pts)…`);
-      await window.DataLoader.loadOverview();
-    } catch (err) {
-      console.error(err);
-      U.setStatus('ERROR: overview load failed', 'err');
-      return;
-    }
-    pwsLayer.setData(window.DataLoader.getOverview());
-    U.setStatus(`✓ ${manifest.score_stats.count.toLocaleString()} PWS points indexed`, 'ok');
+    // ---- Optional research-dataset overlay -----------------------------
+    U.setStatus('Searching for an optional research dataset…');
+    const manifest = await window.DataLoader.loadManifest();
 
     let pendingTileLoad = null;
     async function refreshFromViewport() {
+      if (!window.DataLoader.hasManifest()) return;
       const m = window.MapView.getMap();
       const zoom = m.getZoom();
       if (zoom <= CFG.MAP.OVERVIEW_MAX_ZOOM) {
@@ -280,9 +277,29 @@
         pwsLayer.setData(window.DataLoader.collectVisiblePoints(m.getBounds()));
       }
     });
-    setTimeout(refreshFromViewport, 200);
 
-    window.__iamsm = {
+    if (!manifest) {
+      U.setStatus('Ready — search a city, or upload a CSV / GeoJSON dataset', 'ok');
+    } else {
+      U.setStatsFromManifest(manifest);
+      window.MapView.fitToBounds([
+        [manifest.bounds.min_lat, manifest.bounds.min_lon],
+        [manifest.bounds.max_lat, manifest.bounds.max_lon],
+      ]);
+
+      try {
+        U.setStatus(`Loading overview (${manifest.overview.count.toLocaleString()} pts)…`);
+        await window.DataLoader.loadOverview();
+        pwsLayer.setData(window.DataLoader.getOverview());
+        U.setStatus(`✓ ${manifest.score_stats.count.toLocaleString()} research points indexed`, 'ok');
+      } catch (err) {
+        console.error(err);
+        U.setStatus('⚠ Overview load failed — search a city or upload data', 'err');
+      }
+      setTimeout(refreshFromViewport, 200);
+    }
+
+    window.__urbanpulse = {
       map, pwsLayer, dataLoader: window.DataLoader,
       uploadLayer: window.UploadLayer, manifest,
     };

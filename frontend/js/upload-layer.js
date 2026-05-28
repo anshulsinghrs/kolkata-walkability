@@ -25,7 +25,7 @@
 window.UploadLayer = (function () {
   'use strict';
 
-  const CFG = window.IAMSM_CONFIG;
+  const CFG = window.URBANPULSE_CONFIG;
 
   let map = null;
   let rows = [];
@@ -229,7 +229,7 @@ window.UploadLayer = (function () {
         const size = n > 100 ? 56 : n > 25 ? 46 : n > 8 ? 38 : 32;
         return L.divIcon({
           html: `<div class="cluster-bubble" style="background:${css};width:${size}px;height:${size}px;line-height:${size}px">${n}</div>`,
-          className: 'iamsm-cluster',
+          className: 'urbanpulse-cluster',
           iconSize: L.point(size, size),
         });
       },

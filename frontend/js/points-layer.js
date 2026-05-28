@@ -33,19 +33,19 @@ window.PWSPointsLayer = L.Layer.extend({
 
     // Create our own pane to control z-order. Leaflet's overlayPane is
     // shared with path renderers and can fight with our positioning logic.
-    if (!map.getPane('iamsmPane')) {
-      map.createPane('iamsmPane');
-      const pane = map.getPane('iamsmPane');
+    if (!map.getPane('urbanpulsePane')) {
+      map.createPane('urbanpulsePane');
+      const pane = map.getPane('urbanpulsePane');
       pane.style.zIndex = 450;
       pane.style.pointerEvents = 'none';
     }
 
-    this._canvas = L.DomUtil.create('canvas', 'iamsm-canvas leaflet-zoom-hide');
+    this._canvas = L.DomUtil.create('canvas', 'urbanpulse-canvas leaflet-zoom-hide');
     this._canvas.style.position = 'absolute';
     this._canvas.style.top = '0';
     this._canvas.style.left = '0';
     this._canvas.style.pointerEvents = 'none';
-    map.getPane('iamsmPane').appendChild(this._canvas);
+    map.getPane('urbanpulsePane').appendChild(this._canvas);
 
     // Bind events. `move` (during drag) keeps the canvas synchronised with
     // the basemap; `moveend`/`zoomend` redraw at full quality afterwards.
@@ -87,7 +87,7 @@ window.PWSPointsLayer = L.Layer.extend({
   // Rendering
   // -------------------------------------------------------------------------
   _radius: function (zoom) {
-    const table = window.IAMSM_CONFIG.POINT_RADIUS_BY_ZOOM;
+    const table = window.URBANPULSE_CONFIG.POINT_RADIUS_BY_ZOOM;
     return table[zoom] != null ? table[zoom]
          : zoom < 10 ? 1.0
          : zoom > 19 ? 7.0
@@ -95,7 +95,7 @@ window.PWSPointsLayer = L.Layer.extend({
   },
 
   _alpha: function (zoom) {
-    const table = window.IAMSM_CONFIG.POINT_ALPHA_BY_ZOOM;
+    const table = window.URBANPULSE_CONFIG.POINT_ALPHA_BY_ZOOM;
     return table[zoom] != null ? table[zoom] : 0.85;
   },
 

@@ -1,158 +1,180 @@
-# Deployment Guide
+# Deployment
 
-End-to-end walkthrough from a fresh laptop to a live URL.
+End-to-end deployment walkthrough. Phase 1 (this branch) only needs
+GitHub Pages. Later phases also deploy a backend on Railway / Render /
+or a VPS.
 
-## Prerequisites
+## Phase 1 — static frontend on GitHub Pages
+
+### Prerequisites
 
 - A GitHub account
 - Git installed locally (`git --version` should print a version)
-- Python 3.9+ (`python --version`)
 
-## 1. Generate the data tiles
+### 1. (Optional) generate the legacy research-dataset tiles
 
-If `frontend/data/manifest.json` does not exist (or is out of date), run the
-processor first:
+The platform now boots **without** any pre-baked dataset, so you can
+skip this. If you have a Perceived Walkability Score CSV and want it
+rendered automatically, run:
 
 ```bash
 cd backend
 pip install -r requirements.txt
-python process_data.py --input "C:\Users\Techno\Desktop\aggregated_pixel_ratios - Copy.csv"
+python process_data.py --input /path/to/your_walkability.csv
 cd ..
 ```
 
-Verify it worked:
+Verify it wrote files into `frontend/data/`:
 
 ```bash
-ls frontend/data/             # should show manifest.json, overview.json, tiles/
+ls frontend/data/             # manifest.json, overview.json, tiles/
 ```
 
-## 2. Test locally
+### 2. Test locally
 
-The site uses `fetch()` to load tile JSON, which fails over `file://` in most
-browsers. You need a local server. The simplest option is Python's:
+The site uses `fetch()` to load JSON, which fails over `file://` in
+most browsers. Use any static server:
 
 ```bash
 cd frontend
 python -m http.server 8000
 ```
 
-Open <http://localhost:8000> and verify:
+Open <http://localhost:8000>. Verify:
 
-- Status pill goes through "Initialising → Loading manifest → Loading overview → ✓ N PWS points indexed"
-- Coloured points appear over the basemap
-- Slider, basemap toggles, and click-to-inspect (at zoom ≥ 14) all work
+- The status pill goes through "Initialising → Ready — search a city".
+- Type a city ("Delhi", "Tokyo", "Lisbon", "Kharagpur"…) → dropdown
+  appears → pick a result → map flies to it.
+- The basemap toggle, weights sliders, upload dropzone, and exports
+  all still work.
 
-If anything is broken, open DevTools (F12) → Console for errors.
+If anything is broken, open DevTools (F12) → Console.
 
-Stop the server with `Ctrl-C` once you're satisfied.
+### 3. Push to GitHub
 
-## 3. Push to GitHub
-
-If the project is not already a git repo:
+If the repo isn't already initialised:
 
 ```bash
-cd ..    # back to repo root
 git init
 git add .
-git commit -m "Initial commit: Kolkata Walkability Atlas"
-```
-
-Create a new repository on GitHub (let's call it `kolkata-walkability`) and
-push:
-
-```bash
-git remote add origin https://github.com/<your-username>/kolkata-walkability.git
+git commit -m "Initial commit: UrbanPulse"
+git remote add origin https://github.com/<you>/urbanpulse.git
 git branch -M main
 git push -u origin main
 ```
 
-## 4. Enable GitHub Pages
+### 4. Enable GitHub Pages
 
-1. On GitHub, navigate to your repo.
-2. **Settings** → **Pages** (left sidebar).
+1. On GitHub, open the repo.
+2. **Settings → Pages**.
 3. Under **Build and deployment → Source**, select **GitHub Actions**.
 
-That's it — no further configuration is needed. The workflow file
-(`.github/workflows/deploy.yml`) does the rest.
+The workflow file (`.github/workflows/deploy.yml`) deploys
+`frontend/` to Pages on every push to `main`.
 
-## 5. Watch the deploy
+### 5. Watch the deploy
 
-1. Go to the **Actions** tab of your repo.
-2. You should see a run named "Deploy frontend to GitHub Pages" already
-   in progress (or queued).
-3. Click into it to watch the steps. The "Deploy to GitHub Pages" step
-   prints the live URL when it finishes — usually 1–2 minutes total.
-
-Your site will be live at:
+The **Actions** tab shows a run called *Deploy frontend to GitHub
+Pages*. The deploy step prints the live URL. The site lives at:
 
 ```
 https://<your-username>.github.io/<repo-name>/
 ```
 
-## 6. Updating the live site
+### 6. Updating the live site
 
-Any push to `main` triggers a new deploy automatically. To update the data:
+Every push to `main` redeploys. To update the (optional) overlay
+dataset:
 
 ```bash
-# 1. Regenerate tiles with new CSV
 cd backend
 python process_data.py --input /path/to/new_data.csv
 cd ..
-
-# 2. Commit and push
 git add frontend/data/
 git commit -m "Update PWS dataset (N points)"
 git push
 ```
 
-Within a couple of minutes the live site reflects the new data.
+## Phase 2+ — backend deployment
+
+The FastAPI service can run anywhere that supports Docker. Three
+recommended targets:
+
+### Railway
+
+```bash
+railway up --service api --dockerfile api/Dockerfile
+railway run alembic upgrade head
+```
+
+Add the public URL of the API to the frontend `BACKEND_URL` env var
+(see `web/.env.example`).
+
+### Render
+
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: urbanpulse-api
+    runtime: docker
+    dockerfilePath: api/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: { name: urbanpulse-db, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: redis, name: urbanpulse-redis }
+databases:
+  - name: urbanpulse-db
+    postgresPostgisVersion: "16"
+```
+
+### VPS (Docker Compose)
+
+```bash
+ssh your-vps "git clone https://github.com/<you>/urbanpulse.git \
+  && cd urbanpulse && docker compose -f infra/docker-compose.yml up -d"
+```
+
+NGINX terminates TLS via Let's Encrypt; Cloudflare Pages can front the
+SPA bundle.
 
 ## Troubleshooting
 
-### The site loads but shows no points
+### Site loads but no points appear
 
-- Open DevTools (F12) → **Network** tab. Reload. Look for
-  `manifest.json` and `overview.json`.
-  - **404** on either → the data was not committed. Run the Python
-    processor and verify `frontend/data/` is not in `.gitignore`.
-  - **200 but no points render** → check the **Console** tab for JS errors.
+Open DevTools (F12) → **Network** tab → reload. Look for
+`manifest.json`:
 
-### "Failed to load resource" for tile files
+- **404** → no overlay dataset is published. This is expected for a
+  fresh Phase-1 deploy. Use the city search instead.
+- **200, no points render** → check **Console** for JS errors.
 
-If individual tiles 404 but the manifest loads, the `tiles/` directory
-wasn't pushed. Check:
+### Basemap tiles are blank
 
-```bash
-git ls-files frontend/data/tiles/ | wc -l
-```
+Usually a corporate firewall or content blocker. The basemaps come
+from CARTO / Esri / OSM CDNs and require internet access. Switch to
+the OSM Standard basemap to check.
 
-If this is 0, your `.gitignore` is blocking the JSON files. Make sure your
-`.gitignore` doesn't include `*.json` globally.
+### City search returns "No matches"
 
-### The deploy workflow fails
+- Check Network tab for the Nominatim request. A 429 means rate
+  limiting — Nominatim asks for 1 req/s per user.
+- If you're behind a corporate proxy that blocks `nominatim.org`,
+  configure `BACKEND_URL` and use the FastAPI proxy (Phase 2).
 
-- "Permission denied" → confirm **Settings → Pages → Source** is set to
-  **GitHub Actions** (not "Deploy from a branch").
-- Workflow doesn't run at all → check `.github/workflows/deploy.yml` is in
-  the repo and properly indented (YAML is whitespace-sensitive).
+### Deploy workflow fails
 
-### The map shows but the basemap tiles are blank
+- "Permission denied" → confirm **Settings → Pages → Source** is set
+  to **GitHub Actions** (not "Deploy from a branch").
+- Workflow doesn't run → check `.github/workflows/deploy.yml` is
+  present and indented correctly (YAML is whitespace-sensitive).
 
-This usually means the browser is blocking the CARTO/Esri tile servers due
-to corporate firewall, content blocker, or offline state. Test with the
-"Light" basemap toggle — if that works, the dark basemap CDN is the
-culprit. The site needs internet access to fetch basemap tiles even though
-it's GitHub-Pages-hosted; the basemaps are not bundled.
+## Custom domain
 
-## Custom domain (optional)
+1. Add `frontend/CNAME` with your bare domain (e.g. `urbanpulse.app`).
+2. Point your domain's DNS to `<your-username>.github.io` (CNAME or
+   ALIAS).
+3. In **Settings → Pages**, enter the domain and tick "Enforce HTTPS".
 
-If you have a domain (e.g., `walkability.iitkgp.ac.in`):
-
-1. Add a `CNAME` file at `frontend/CNAME` containing the bare domain
-   (one line, no `https://`).
-2. Configure your domain's DNS to CNAME-point to
-   `<your-username>.github.io`.
-3. In **Settings → Pages**, enter the domain in the "Custom domain" field
-   and tick "Enforce HTTPS" once provisioned.
-
-GitHub takes care of issuing the TLS certificate.
+GitHub provisions the TLS cert via Let's Encrypt automatically.

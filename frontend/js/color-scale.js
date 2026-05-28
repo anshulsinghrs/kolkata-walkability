@@ -9,7 +9,7 @@
 window.ColorScale = (function () {
   'use strict';
 
-  const STOPS = window.IAMSM_CONFIG.SCORE_STOPS;
+  const STOPS = window.URBANPULSE_CONFIG.SCORE_STOPS;
 
   function lerp(a, b, t) { return a + (b - a) * t; }
 
