@@ -25,8 +25,10 @@ Usage:
     python process_data.py --input ../path/to/data.csv
     python process_data.py --input data.csv --grid 16 --overview-step 10
 
-Author: Anshul Singh (IIT Kharagpur, RCG SID)
-Project: IAMSM — Integrated Active Mobility Safety Matrix
+Part of the UrbanPulse open-source urban walkability platform.
+Originally developed for street-level Perceived Walkability Scores; the
+output schema (manifest + tiles + overview) is now optional — UrbanPulse
+boots without any pre-baked dataset and can pull live OSM data per city.
 """
 
 from __future__ import annotations
@@ -232,7 +234,7 @@ def write_manifest(
 # ---------------------------------------------------------------------------
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Convert PWS CSV into spatial tiles for the IAMSM frontend."
+        description="Convert a walkability-score CSV into spatial tiles for the UrbanPulse frontend."
     )
     parser.add_argument(
         "--input", "-i", required=True, type=Path,
@@ -259,7 +261,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 64)
-    print(" IAMSM PWS Data Processor")
+    print(" UrbanPulse · Walkability-score tile processor")
     print("=" * 64)
 
     print("\n[1/5] Loading data")

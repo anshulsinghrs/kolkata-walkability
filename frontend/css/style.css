@@ -1,6 +1,6 @@
 /* =========================================================================
-   IAMSM — Walkability Atlas
-   Stylesheet — modern dashboard, glassmorphism, dark academic theme
+   UrbanPulse — Global Urban Walkability Intelligence
+   Stylesheet — modern dashboard, glassmorphism, dark theme
    ========================================================================= */
 
 :root {
@@ -226,6 +226,104 @@ body[data-basemap="topo"] .legend {
   color: var(--text-muted);
   margin-top: 8px;
   letter-spacing: 0.08em;
+}
+
+/* =========================================================================
+   City search (Nominatim)
+   ========================================================================= */
+.city-search {
+  position: relative;
+  margin-top: 14px;
+}
+.city-search .cs-icon {
+  position: absolute;
+  left: 12px;
+  top: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.cs-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(10, 11, 14, 0.65);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.cs-input::placeholder { color: var(--text-muted); }
+.cs-input:focus {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: rgba(10, 11, 14, 0.85);
+}
+.cs-input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.cs-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--panel-deep);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-glass);
+  z-index: 11;
+  padding: 4px;
+}
+.cs-row {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.cs-row:hover { background: var(--accent-soft); }
+.cs-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+.cs-primary { font-weight: 500; }
+.cs-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.cs-secondary {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cs-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.cs-hint {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
 }
 
 @keyframes fadeUp {
@@ -1190,7 +1288,7 @@ body[data-basemap="topo"] .legend {
 /* =========================================================================
    Cluster bubble
    ========================================================================= */
-.iamsm-cluster { background: transparent !important; }
+.urbanpulse-cluster { background: transparent !important; }
 .cluster-bubble {
   border-radius: 50%;
   color: #1a1208;

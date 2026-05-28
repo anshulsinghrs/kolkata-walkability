@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Kolkata Perceived Walkability Atlas — interactive geospatial urban analytics. Upload CSVs, switch between point / heatmap / cluster views, recompute walkability under custom indicator weights, and export filtered layers. PhD research, IIT Kharagpur." />
-<title>Walkability Atlas — Interactive Urban Analytics</title>
+<meta name="description" content="UrbanPulse — open-source global urban walkability and mobility intelligence platform. Search any city, layer OpenStreetMap data, recompute walkability under custom indicator weights, upload datasets, and export results. Free, self-hostable, research-grade." />
+<title>UrbanPulse — Global Urban Walkability Intelligence</title>
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -48,15 +48,36 @@
       <circle cx="25" cy="9"  r="1.8" fill="#65a30d"/>
     </svg>
     <div class="brand-text">
-      <div class="eyebrow">IAMSM · Urban Walkability</div>
-      <h1>Walkability <em>Atlas</em></h1>
+      <div class="eyebrow">Global Urban Intelligence</div>
+      <h1>Urban<em>Pulse</em></h1>
     </div>
   </div>
   <p class="subtitle">
-    Interactive geospatial analytics for street-level walkability — Mask2Former
-    computer vision, stated-preference modelling, and live CSV-driven overlays.
+    Open-source walkability &amp; mobility analytics for any city in the world.
+    OpenStreetMap-driven, AI-augmented, research-grade.
   </p>
-  <p class="credit">ANSHUL SINGH · IIT KHARAGPUR · RCG SOID</p>
+
+  <!-- ===================== City Search ===================== -->
+  <div class="city-search" id="city-search" role="search">
+    <svg class="cs-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" stroke-linecap="round" />
+    </svg>
+    <input
+      type="search"
+      id="city-search-input"
+      class="cs-input"
+      placeholder="Search any city, district, or area…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search for a city"
+      aria-controls="city-search-results"
+    />
+    <ul id="city-search-results" class="cs-results" role="listbox" hidden></ul>
+    <div class="cs-hint">Powered by OpenStreetMap · Nominatim</div>
+  </div>
+
+  <p class="credit">Open source · MIT · OpenStreetMap data © OSM contributors</p>
 </header>
 
 <!-- ===================== Mobile Toggle ===================== -->
@@ -333,16 +354,19 @@
       </div>
 
       <div class="section">
-        <h2 class="section-title">Methodology</h2>
+        <h2 class="section-title">About UrbanPulse</h2>
         <p class="about-text">
-          <strong>PWS</strong> integrates four built-environment indicators
-          extracted from GSV imagery — <em>sidewalk</em>, <em>greenery</em>,
-          <em>streetlight</em>, <em>crowdedness</em> — weighted by coefficients
-          from a binary-logit stated-preference model.
+          <strong>UrbanPulse</strong> is an open-source platform for urban
+          walkability and mobility intelligence. Search any city, layer
+          OpenStreetMap data, recompute walkability scores under custom
+          indicator weights, and overlay your own observations.
         </p>
         <p class="about-text">
-          Upload your own CSV to overlay external observations (hazards,
-          incidents, audits) and recombine indicators using the Weights tab.
+          The walkability score model combines built-environment indicators —
+          sidewalk quality, greenery, lighting, crowdedness, crossing safety —
+          weighted by a stated-preference coefficient set you can edit in the
+          <em>Weights</em> tab. Upload CSV / GeoJSON datasets to overlay
+          hazards, audits, or alternative scoring methodologies.
         </p>
       </div>
     </section>
@@ -439,6 +463,7 @@
 <script src="js/data-loader.js"></script>
 <script src="js/points-layer.js"></script>
 <script src="js/map-view.js"></script>
+<script src="js/city-search.js"></script>
 <script src="js/csv-loader.js"></script>
 <script src="js/upload-layer.js"></script>
 <script src="js/weights.js"></script>

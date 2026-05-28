@@ -14,7 +14,7 @@
 window.Weights = (function () {
   'use strict';
 
-  const DEFAULTS = window.IAMSM_CONFIG.DEFAULT_WEIGHTS;
+  const DEFAULTS = window.URBANPULSE_CONFIG.DEFAULT_WEIGHTS;
   const KEYS = Object.keys(DEFAULTS);
 
   let raw = Object.assign({}, DEFAULTS);

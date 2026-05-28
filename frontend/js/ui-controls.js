@@ -7,7 +7,7 @@
 window.UIControls = (function () {
   'use strict';
 
-  const CFG = window.IAMSM_CONFIG;
+  const CFG = window.URBANPULSE_CONFIG;
 
   // -------------------------------------------------------------------
   // Status pill

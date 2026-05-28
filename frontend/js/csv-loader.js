@@ -17,7 +17,7 @@
 window.CSVLoader = (function () {
   'use strict';
 
-  const SYN = window.IAMSM_CONFIG.COLUMN_SYNONYMS;
+  const SYN = window.URBANPULSE_CONFIG.COLUMN_SYNONYMS;
 
   function detectMapping(headers) {
     const lowered = headers.map(h => String(h || '').toLowerCase().trim());

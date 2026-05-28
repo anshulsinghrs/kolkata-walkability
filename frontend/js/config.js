@@ -1,23 +1,41 @@
 /**
  * config.js
  * ----------
- * Configuration constants for the IAMSM Walkability Atlas frontend.
+ * Configuration constants for the UrbanPulse global walkability platform.
  *
- * Exposes a single global `IAMSM_CONFIG` object. All modules read from this
- * object — change values here without touching application logic.
+ * Exposes a single global `URBANPULSE_CONFIG` object. All modules read from
+ * this object — change values here without touching application logic.
  */
 
-window.IAMSM_CONFIG = {
-  /* ---- Data paths (relative to index.html) ---- */
+window.URBANPULSE_CONFIG = {
+  /* ---- Brand ---- */
+  BRAND: {
+    NAME: 'UrbanPulse',
+    TAGLINE: 'Global urban walkability & mobility intelligence',
+    REPO: 'https://github.com/anshulsinghrs/kolkata-walkability',
+  },
+
+  /* ---- Optional research-dataset (PWS) static assets.
+         The platform now boots without these — they only render if present. */
   DATA_BASE: 'data/',
   MANIFEST_PATH: 'data/manifest.json',
   OVERVIEW_PATH: 'data/overview.json',
 
-  /* ---- Map ---- */
+  /* ---- Geocoder ---- */
+  GEOCODER: {
+    NOMINATIM_URL: 'https://nominatim.openstreetmap.org/search',
+    LANGUAGE: 'en',
+    LIMIT: 8,
+    DEBOUNCE_MS: 280,
+  },
+
+  /* ---- Map ----
+         DEFAULT_CENTER is a global view — the app no longer pins to one city.
+         When a user searches for any city the map fits to its OSM bounding box. */
   MAP: {
-    DEFAULT_CENTER: [22.5675, 88.3700],
-    DEFAULT_ZOOM: 12,
-    MIN_ZOOM: 3,
+    DEFAULT_CENTER: [20.0, 10.0],
+    DEFAULT_ZOOM: 3,
+    MIN_ZOOM: 2,
     MAX_ZOOM: 19,
     OVERVIEW_MAX_ZOOM: 13,
   },

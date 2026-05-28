@@ -1,19 +1,23 @@
-# Backend — Data Processing Pipeline
+# Backend — offline data-processing pipeline
 
-This folder contains the offline data-processing scripts that convert raw PWS
-CSV exports into the spatially-chunked JSON tiles consumed by the static
-frontend. **There is no live server** — GitHub Pages only hosts static files,
-so all heavy lifting happens here, once, before deployment.
+This folder contains the Phase-1 offline data-processing scripts used by
+**UrbanPulse**. They convert a walkability-score CSV (originally the
+Kolkata PWS export) into spatially-chunked JSON tiles consumed by the
+static frontend. These tiles are **optional** — UrbanPulse now boots
+without any pre-baked dataset and can drive its visualisations from
+Nominatim + user uploads alone.
 
-## What this does
+The Phase 2+ live API (FastAPI + OSMnx + PostGIS) is scoped in
+[`../docs/BACKEND_PLAN.md`](../docs/BACKEND_PLAN.md).
 
-`process_data.py` takes a CSV with point-level Perceived Walkability Scores
-and produces:
+## What `process_data.py` does
+
+Given a CSV with point-level walkability scores it produces:
 
 ```
 frontend/data/
 ├── manifest.json     # index of tiles + metadata (bounds, statistics)
-├── overview.json     # ~10% sample of all points (shown when zoomed out)
+├── overview.json     # sampled subset of all points (shown when zoomed out)
 └── tiles/
     ├── 0_0.json
     ├── 0_1.json
@@ -23,8 +27,8 @@ frontend/data/
 
 The frontend loads `manifest.json` first, then `overview.json` for the
 city-wide view. As the user zooms in, only the tiles intersecting the
-current viewport are fetched on demand. This means even a 400,000-point
-dataset stays responsive on a static host.
+viewport are fetched — keeping even a 400k-point dataset responsive on
+a purely static host.
 
 ## Setup
 
@@ -37,11 +41,9 @@ pip install -r requirements.txt
 
 ## Usage
 
-From the `backend/` directory:
-
 ```bash
 # Default — 16x16 grid, overview keeps 1 in 10 points
-python process_data.py --input /path/to/aggregated_pixel_ratios.csv
+python process_data.py --input /path/to/walkability.csv
 
 # Larger grid for finer chunks (use for 400k+ datasets)
 python process_data.py --input data.csv --grid 24
@@ -50,15 +52,8 @@ python process_data.py --input data.csv --grid 24
 python process_data.py --input data.csv --overview-step 5
 ```
 
-Required CSV columns: `lon`, `lat`, `Psw_score`. Other columns
-(`base_filename_key`, `PWS`) are ignored.
-
-## Re-running
-
-Every time you regenerate PWS scores (e.g., after extending coverage from
-73k to 400k points), re-run this script. It will overwrite the contents of
-`frontend/data/`. Then commit and push — GitHub Actions redeploys
-automatically.
+Required CSV columns: `lon`, `lat`, `Psw_score`. Other columns are
+ignored.
 
 ## Tile size guidance
 
@@ -75,7 +70,10 @@ file sizes stay small and parallel HTTP/2 requests stay efficient.
 ## Future extensions
 
 When the additional indicator layers (sidewalk, greenery, streetlight,
-crowdedness) are exposed per-point, extend the `["lon", "lat", "Psw_score"]`
-column list in `write_overview` / `write_tiles` to include them. The
-frontend will need a corresponding update to read the extra columns and
-display them in the click popup as a small radar chart.
+crowdedness, crossing safety) are exposed per-point, extend the
+`["lon", "lat", "Psw_score"]` column list in `write_overview` /
+`write_tiles` to include them. The frontend will read the extra
+columns and surface them in the click popup as a small radar chart.
+
+For the live (per-city, on-demand) pipeline, see the FastAPI service
+under `api/` once Phase 2 lands.

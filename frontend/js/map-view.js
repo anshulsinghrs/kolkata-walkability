@@ -7,7 +7,7 @@
 window.MapView = (function () {
   'use strict';
 
-  const CFG = window.IAMSM_CONFIG;
+  const CFG = window.URBANPULSE_CONFIG;
 
   let map = null;
   let currentBase = null;

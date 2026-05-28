@@ -20,7 +20,7 @@
 window.DataLoader = (function () {
   'use strict';
 
-  const CFG = window.IAMSM_CONFIG;
+  const CFG = window.URBANPULSE_CONFIG;
 
   /** @type {Object|null} Loaded manifest */
   let manifest = null;
@@ -46,19 +46,26 @@ window.DataLoader = (function () {
   // -------------------------------------------------------------------------
   // Manifest & overview
   // -------------------------------------------------------------------------
+  /**
+   * Try to load an optional research-dataset manifest. Returns the manifest
+   * on success, or `null` if it is absent / unreachable — the platform now
+   * boots without any pre-baked dataset, so 404s are NOT a fatal error.
+   */
   async function loadManifest() {
-    const res = await fetch(CFG.MANIFEST_PATH, { cache: 'force-cache' });
-    if (!res.ok) {
-      throw new Error(
-        `Could not load ${CFG.MANIFEST_PATH} (HTTP ${res.status}). ` +
-        `Did you run backend/process_data.py?`
-      );
+    try {
+      const res = await fetch(CFG.MANIFEST_PATH, { cache: 'force-cache' });
+      if (!res.ok) return null;
+      manifest = await res.json();
+      return manifest;
+    } catch (_err) {
+      return null;
     }
-    manifest = await res.json();
-    return manifest;
   }
 
+  function hasManifest() { return manifest !== null; }
+
   async function loadOverview() {
+    if (!manifest) return null;
     const res = await fetch(CFG.OVERVIEW_PATH, { cache: 'force-cache' });
     if (!res.ok) throw new Error(`Failed to load overview (HTTP ${res.status})`);
     overview = await res.json();
@@ -166,6 +173,7 @@ window.DataLoader = (function () {
 
   return {
     loadManifest,
+    hasManifest,
     loadOverview,
     ensureTilesForBounds,
     collectVisiblePoints,
