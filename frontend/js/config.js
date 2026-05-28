@@ -30,11 +30,12 @@ window.URBANPULSE_CONFIG = {
   },
 
   /* ---- Map ----
-         DEFAULT_CENTER is a global view — the app no longer pins to one city.
-         When a user searches for any city the map fits to its OSM bounding box. */
+         DEFAULT_CENTER frames India (the project's home country) on first
+         load. The user can still search any city worldwide and the map
+         fits to its OSM bounding box. */
   MAP: {
-    DEFAULT_CENTER: [20.0, 10.0],
-    DEFAULT_ZOOM: 3,
+    DEFAULT_CENTER: [22.5, 79.0],
+    DEFAULT_ZOOM: 5,
     MIN_ZOOM: 2,
     MAX_ZOOM: 19,
     OVERVIEW_MAX_ZOOM: 13,
