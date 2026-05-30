@@ -59,10 +59,9 @@ window.MapView = (function () {
     });
 
     buildBasemaps();
-    currentBase = basemapInstances.dark;
+    currentBase = basemapInstances.osm;
     currentBase.addTo(map);
-    darkLabelsLayer.addTo(map);
-    document.body.dataset.basemap = 'dark';
+    document.body.dataset.basemap = 'osm';
 
     return map;
   }
