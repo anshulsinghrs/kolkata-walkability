@@ -365,8 +365,59 @@
           The walkability score model combines built-environment indicators —
           sidewalk quality, greenery, lighting, crowdedness, crossing safety —
           weighted by a stated-preference coefficient set you can edit in the
-          <em>Weights</em> tab. Upload CSV / GeoJSON datasets to overlay
-          hazards, audits, or alternative scoring methodologies.
+          <em>Weights</em> tab.
+        </p>
+
+        <h3 class="about-subhead">How to use</h3>
+        <ol class="about-steps">
+          <li>
+            <strong>Pick a city.</strong> Use the search bar at the top to
+            jump to any place. The map fits to its OSM bounding box.
+          </li>
+          <li>
+            <strong>Choose a basemap.</strong> In the <em>Map</em> tab, pick
+            OSM, Positron, Dark, Satellite, or Topo.
+          </li>
+          <li>
+            <strong>Upload your data.</strong> In the <em>Data</em> tab, drop
+            a CSV or GeoJSON file. Headers are auto-detected — see the
+            expected columns below.
+          </li>
+          <li>
+            <strong>Style the layer.</strong> Switch between points, heatmap,
+            or clusters in <em>Layers</em>, and tune the color scale.
+          </li>
+          <li>
+            <strong>Tune the score.</strong> Adjust indicator coefficients in
+            <em>Weights</em> to recompute walkability live.
+          </li>
+          <li>
+            <strong>Export.</strong> Download the current view as GeoJSON,
+            CSV, or PNG from the <em>Export</em> tab.
+          </li>
+        </ol>
+
+        <h3 class="about-subhead">CSV format</h3>
+        <p class="about-text">
+          Only <code>latitude</code> and <code>longitude</code> are required;
+          everything else is optional. Common header variants are detected
+          automatically (e.g. <code>lat</code>/<code>lon</code>,
+          <code>y</code>/<code>x</code>, <code>score</code> for weight).
+        </p>
+        <pre class="about-code">latitude,longitude,weightage,category,sidewalk,greenery,lighting,crowdedness,crossing_safety,notes,timestamp,image_url
+22.5726,88.3639,72,audit,0.8,0.6,0.7,0.5,0.9,Broken kerb near junction,2025-03-14T10:21:00Z,https://…/kerb.jpg
+22.5810,88.3501,38,hazard,0.3,0.2,0.4,0.9,0.2,Flooded sidewalk,,</pre>
+        <ul class="about-cols">
+          <li><code>latitude</code>, <code>longitude</code> — required, decimal degrees. Aliases: <code>lat</code>, <code>y</code> / <code>lng</code>, <code>lon</code>, <code>long</code>, <code>x</code>.</li>
+          <li><code>weightage</code> — 0–100 (or 0–1, auto-rescaled). Aliases: <code>weight</code>, <code>score</code>, <code>pws</code>, <code>walkability</code>, <code>value</code>. Defaults to 50 if missing.</li>
+          <li><code>category</code> — free-form tag. Aliases: <code>class</code>, <code>type</code>, <code>tag</code>.</li>
+          <li><code>sidewalk</code>, <code>greenery</code>, <code>lighting</code>, <code>crowdedness</code>, <code>crossing_safety</code> — indicator values (0–1 or 0–100).</li>
+          <li><code>notes</code>, <code>timestamp</code>, <code>image_url</code>, <code>hazard_type</code> — optional metadata shown in the detail drawer.</li>
+        </ul>
+        <p class="about-text">
+          GeoJSON <code>FeatureCollection</code> files work too — point
+          geometries are read directly and feature <code>properties</code>
+          are matched against the same column names.
         </p>
       </div>
     </section>
