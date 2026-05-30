@@ -365,8 +365,139 @@
           The walkability score model combines built-environment indicators —
           sidewalk quality, greenery, lighting, crowdedness, crossing safety —
           weighted by a stated-preference coefficient set you can edit in the
-          <em>Weights</em> tab. Upload CSV / GeoJSON datasets to overlay
-          hazards, audits, or alternative scoring methodologies.
+          <em>Weights</em> tab.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">How to use</h2>
+        <ol class="howto-steps">
+          <li>
+            <span class="howto-num">1</span>
+            <div class="howto-body">
+              <span class="howto-title">Pick a city</span>
+              <span class="howto-desc">Search any place from the top bar — the map fits to its OSM bounds.</span>
+            </div>
+          </li>
+          <li>
+            <span class="howto-num">2</span>
+            <div class="howto-body">
+              <span class="howto-title">Choose a basemap</span>
+              <span class="howto-desc">OSM, Positron, Dark, Satellite, or Topo — in the <em>Map</em> tab.</span>
+            </div>
+          </li>
+          <li>
+            <span class="howto-num">3</span>
+            <div class="howto-body">
+              <span class="howto-title">Upload your data</span>
+              <span class="howto-desc">Drop a CSV or GeoJSON in the <em>Data</em> tab — columns auto-detect.</span>
+            </div>
+          </li>
+          <li>
+            <span class="howto-num">4</span>
+            <div class="howto-body">
+              <span class="howto-title">Style the layer</span>
+              <span class="howto-desc">Points, heatmap, or clusters in <em>Layers</em>; tune the color scale.</span>
+            </div>
+          </li>
+          <li>
+            <span class="howto-num">5</span>
+            <div class="howto-body">
+              <span class="howto-title">Tune the score</span>
+              <span class="howto-desc">Adjust indicator coefficients in <em>Weights</em> to recompute live.</span>
+            </div>
+          </li>
+          <li>
+            <span class="howto-num">6</span>
+            <div class="howto-body">
+              <span class="howto-title">Export</span>
+              <span class="howto-desc">Download the current view as GeoJSON, CSV, or PNG.</span>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">CSV format</h2>
+        <p class="hint">
+          Only <code>latitude</code> and <code>longitude</code> are required.
+          Common header variants are detected automatically.
+        </p>
+
+        <div class="csv-sample">
+          <div class="csv-sample-head">
+            <span>example.csv</span>
+            <span class="csv-sample-tag">UTF-8</span>
+          </div>
+          <pre class="csv-sample-body">latitude,longitude,weightage,category,sidewalk,greenery,lighting,crowdedness,crossing_safety,notes,timestamp,image_url
+22.5726,88.3639,72,audit,0.8,0.6,0.7,0.5,0.9,Broken kerb near junction,2025-03-14T10:21:00Z,https://…/kerb.jpg
+22.5810,88.3501,38,hazard,0.3,0.2,0.4,0.9,0.2,Flooded sidewalk,,</pre>
+        </div>
+
+        <div class="csv-cols-head">
+          <span>Column</span>
+          <span>Accepted aliases</span>
+        </div>
+        <ul class="csv-cols">
+          <li class="csv-col-req">
+            <span class="csv-col-name">latitude <span class="csv-col-flag">req</span></span>
+            <span class="csv-col-aliases">lat · y</span>
+          </li>
+          <li class="csv-col-req">
+            <span class="csv-col-name">longitude <span class="csv-col-flag">req</span></span>
+            <span class="csv-col-aliases">lng · lon · long · x</span>
+          </li>
+          <li>
+            <span class="csv-col-name">weightage</span>
+            <span class="csv-col-aliases">weight · score · pws · walkability · value</span>
+          </li>
+          <li>
+            <span class="csv-col-name">category</span>
+            <span class="csv-col-aliases">class · type · tag</span>
+          </li>
+          <li>
+            <span class="csv-col-name">sidewalk</span>
+            <span class="csv-col-aliases">—</span>
+          </li>
+          <li>
+            <span class="csv-col-name">greenery</span>
+            <span class="csv-col-aliases">green · vegetation</span>
+          </li>
+          <li>
+            <span class="csv-col-name">lighting</span>
+            <span class="csv-col-aliases">streetlight · light</span>
+          </li>
+          <li>
+            <span class="csv-col-name">crowdedness</span>
+            <span class="csv-col-aliases">crowd · density</span>
+          </li>
+          <li>
+            <span class="csv-col-name">crossing_safety</span>
+            <span class="csv-col-aliases">crossing · safety</span>
+          </li>
+          <li>
+            <span class="csv-col-name">notes</span>
+            <span class="csv-col-aliases">note · comment · remark · description</span>
+          </li>
+          <li>
+            <span class="csv-col-name">timestamp</span>
+            <span class="csv-col-aliases">time · date · datetime</span>
+          </li>
+          <li>
+            <span class="csv-col-name">image_url</span>
+            <span class="csv-col-aliases">image · photo · img · picture</span>
+          </li>
+          <li>
+            <span class="csv-col-name">hazard_type</span>
+            <span class="csv-col-aliases">hazard · incident</span>
+          </li>
+        </ul>
+
+        <p class="about-text about-note">
+          Values 0–1 are auto-rescaled to 0–100. Missing weights default to
+          50. GeoJSON <code>FeatureCollection</code> files work too — point
+          geometries are read and feature <code>properties</code> match the
+          same column names.
         </p>
       </div>
     </section>
