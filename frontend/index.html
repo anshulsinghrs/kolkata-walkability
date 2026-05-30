@@ -367,57 +367,137 @@
           weighted by a stated-preference coefficient set you can edit in the
           <em>Weights</em> tab.
         </p>
+      </div>
 
-        <h3 class="about-subhead">How to use</h3>
-        <ol class="about-steps">
+      <div class="section">
+        <h2 class="section-title">How to use</h2>
+        <ol class="howto-steps">
           <li>
-            <strong>Pick a city.</strong> Use the search bar at the top to
-            jump to any place. The map fits to its OSM bounding box.
+            <span class="howto-num">1</span>
+            <div class="howto-body">
+              <span class="howto-title">Pick a city</span>
+              <span class="howto-desc">Search any place from the top bar — the map fits to its OSM bounds.</span>
+            </div>
           </li>
           <li>
-            <strong>Choose a basemap.</strong> In the <em>Map</em> tab, pick
-            OSM, Positron, Dark, Satellite, or Topo.
+            <span class="howto-num">2</span>
+            <div class="howto-body">
+              <span class="howto-title">Choose a basemap</span>
+              <span class="howto-desc">OSM, Positron, Dark, Satellite, or Topo — in the <em>Map</em> tab.</span>
+            </div>
           </li>
           <li>
-            <strong>Upload your data.</strong> In the <em>Data</em> tab, drop
-            a CSV or GeoJSON file. Headers are auto-detected — see the
-            expected columns below.
+            <span class="howto-num">3</span>
+            <div class="howto-body">
+              <span class="howto-title">Upload your data</span>
+              <span class="howto-desc">Drop a CSV or GeoJSON in the <em>Data</em> tab — columns auto-detect.</span>
+            </div>
           </li>
           <li>
-            <strong>Style the layer.</strong> Switch between points, heatmap,
-            or clusters in <em>Layers</em>, and tune the color scale.
+            <span class="howto-num">4</span>
+            <div class="howto-body">
+              <span class="howto-title">Style the layer</span>
+              <span class="howto-desc">Points, heatmap, or clusters in <em>Layers</em>; tune the color scale.</span>
+            </div>
           </li>
           <li>
-            <strong>Tune the score.</strong> Adjust indicator coefficients in
-            <em>Weights</em> to recompute walkability live.
+            <span class="howto-num">5</span>
+            <div class="howto-body">
+              <span class="howto-title">Tune the score</span>
+              <span class="howto-desc">Adjust indicator coefficients in <em>Weights</em> to recompute live.</span>
+            </div>
           </li>
           <li>
-            <strong>Export.</strong> Download the current view as GeoJSON,
-            CSV, or PNG from the <em>Export</em> tab.
+            <span class="howto-num">6</span>
+            <div class="howto-body">
+              <span class="howto-title">Export</span>
+              <span class="howto-desc">Download the current view as GeoJSON, CSV, or PNG.</span>
+            </div>
           </li>
         </ol>
+      </div>
 
-        <h3 class="about-subhead">CSV format</h3>
-        <p class="about-text">
-          Only <code>latitude</code> and <code>longitude</code> are required;
-          everything else is optional. Common header variants are detected
-          automatically (e.g. <code>lat</code>/<code>lon</code>,
-          <code>y</code>/<code>x</code>, <code>score</code> for weight).
+      <div class="section">
+        <h2 class="section-title">CSV format</h2>
+        <p class="hint">
+          Only <code>latitude</code> and <code>longitude</code> are required.
+          Common header variants are detected automatically.
         </p>
-        <pre class="about-code">latitude,longitude,weightage,category,sidewalk,greenery,lighting,crowdedness,crossing_safety,notes,timestamp,image_url
+
+        <div class="csv-sample">
+          <div class="csv-sample-head">
+            <span>example.csv</span>
+            <span class="csv-sample-tag">UTF-8</span>
+          </div>
+          <pre class="csv-sample-body">latitude,longitude,weightage,category,sidewalk,greenery,lighting,crowdedness,crossing_safety,notes,timestamp,image_url
 22.5726,88.3639,72,audit,0.8,0.6,0.7,0.5,0.9,Broken kerb near junction,2025-03-14T10:21:00Z,https://…/kerb.jpg
 22.5810,88.3501,38,hazard,0.3,0.2,0.4,0.9,0.2,Flooded sidewalk,,</pre>
-        <ul class="about-cols">
-          <li><code>latitude</code>, <code>longitude</code> — required, decimal degrees. Aliases: <code>lat</code>, <code>y</code> / <code>lng</code>, <code>lon</code>, <code>long</code>, <code>x</code>.</li>
-          <li><code>weightage</code> — 0–100 (or 0–1, auto-rescaled). Aliases: <code>weight</code>, <code>score</code>, <code>pws</code>, <code>walkability</code>, <code>value</code>. Defaults to 50 if missing.</li>
-          <li><code>category</code> — free-form tag. Aliases: <code>class</code>, <code>type</code>, <code>tag</code>.</li>
-          <li><code>sidewalk</code>, <code>greenery</code>, <code>lighting</code>, <code>crowdedness</code>, <code>crossing_safety</code> — indicator values (0–1 or 0–100).</li>
-          <li><code>notes</code>, <code>timestamp</code>, <code>image_url</code>, <code>hazard_type</code> — optional metadata shown in the detail drawer.</li>
+        </div>
+
+        <div class="csv-cols-head">
+          <span>Column</span>
+          <span>Accepted aliases</span>
+        </div>
+        <ul class="csv-cols">
+          <li class="csv-col-req">
+            <span class="csv-col-name">latitude <span class="csv-col-flag">req</span></span>
+            <span class="csv-col-aliases">lat · y</span>
+          </li>
+          <li class="csv-col-req">
+            <span class="csv-col-name">longitude <span class="csv-col-flag">req</span></span>
+            <span class="csv-col-aliases">lng · lon · long · x</span>
+          </li>
+          <li>
+            <span class="csv-col-name">weightage</span>
+            <span class="csv-col-aliases">weight · score · pws · walkability · value</span>
+          </li>
+          <li>
+            <span class="csv-col-name">category</span>
+            <span class="csv-col-aliases">class · type · tag</span>
+          </li>
+          <li>
+            <span class="csv-col-name">sidewalk</span>
+            <span class="csv-col-aliases">—</span>
+          </li>
+          <li>
+            <span class="csv-col-name">greenery</span>
+            <span class="csv-col-aliases">green · vegetation</span>
+          </li>
+          <li>
+            <span class="csv-col-name">lighting</span>
+            <span class="csv-col-aliases">streetlight · light</span>
+          </li>
+          <li>
+            <span class="csv-col-name">crowdedness</span>
+            <span class="csv-col-aliases">crowd · density</span>
+          </li>
+          <li>
+            <span class="csv-col-name">crossing_safety</span>
+            <span class="csv-col-aliases">crossing · safety</span>
+          </li>
+          <li>
+            <span class="csv-col-name">notes</span>
+            <span class="csv-col-aliases">note · comment · remark · description</span>
+          </li>
+          <li>
+            <span class="csv-col-name">timestamp</span>
+            <span class="csv-col-aliases">time · date · datetime</span>
+          </li>
+          <li>
+            <span class="csv-col-name">image_url</span>
+            <span class="csv-col-aliases">image · photo · img · picture</span>
+          </li>
+          <li>
+            <span class="csv-col-name">hazard_type</span>
+            <span class="csv-col-aliases">hazard · incident</span>
+          </li>
         </ul>
-        <p class="about-text">
-          GeoJSON <code>FeatureCollection</code> files work too — point
-          geometries are read directly and feature <code>properties</code>
-          are matched against the same column names.
+
+        <p class="about-text about-note">
+          Values 0–1 are auto-rescaled to 0–100. Missing weights default to
+          50. GeoJSON <code>FeatureCollection</code> files work too — point
+          geometries are read and feature <code>properties</code> match the
+          same column names.
         </p>
       </div>
     </section>

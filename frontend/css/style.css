@@ -1031,59 +1031,203 @@ body[data-basemap="topo"] .legend {
   color: var(--text-dim);
 }
 .about-text strong { color: var(--text); font-weight: 500; }
+.about-text em { color: var(--accent); font-style: normal; }
 .about-text + .about-text { margin-top: 10px; }
-.about-text code,
-.about-cols code,
-.about-steps code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+.about-text code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.about-note {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
   font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ---- How-to-use timeline ---- */
+.howto-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+.howto-steps::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  bottom: 14px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--accent-line) 12%,
+    var(--accent-line) 88%,
+    transparent
+  );
+}
+.howto-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 8px 0;
+  position: relative;
+}
+.howto-num {
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--panel-solid);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 4px var(--panel-solid);
+}
+.howto-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 3px;
+}
+.howto-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.005em;
+}
+.howto-desc {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+.howto-desc em {
+  font-style: normal;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10.5px;
   padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+  background: var(--accent-soft);
 }
 
-.about-subhead {
-  margin: 16px 0 6px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+/* ---- CSV sample block (looks like an editor pane) ---- */
+.csv-sample {
+  margin: 0 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.csv-sample-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text);
-}
-
-.about-steps {
-  margin: 6px 0 4px;
-  padding-left: 20px;
-  font-size: 12.5px;
-  line-height: 1.6;
   color: var(--text-dim);
 }
-.about-steps li { margin-bottom: 6px; }
-.about-steps strong { color: var(--text); font-weight: 500; }
-
-.about-code {
-  margin: 8px 0 10px;
-  padding: 10px 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.55;
+.csv-sample-tag {
+  color: var(--accent);
+  font-size: 9.5px;
+}
+.csv-sample-body {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.65;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
   overflow-x: auto;
   white-space: pre;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.csv-sample-body::-webkit-scrollbar { height: 6px; }
+.csv-sample-body::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
 }
 
-.about-cols {
-  margin: 6px 0 10px;
-  padding-left: 18px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--text-dim);
+/* ---- CSV column reference (paired with .detected-list vibe) ---- */
+.csv-cols-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
 }
-.about-cols li { margin-bottom: 4px; }
+.csv-cols {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.csv-cols li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  transition: background 0.12s ease;
+}
+.csv-cols li:hover { background: rgba(255, 255, 255, 0.03); }
+.csv-cols .csv-col-name {
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.csv-cols .csv-col-aliases {
+  color: var(--text-muted);
+  text-align: right;
+  font-size: 10px;
+}
+.csv-cols .csv-col-req {
+  background: var(--accent-soft);
+}
+.csv-cols .csv-col-req:hover { background: var(--accent-soft); }
+.csv-cols .csv-col-req .csv-col-name { color: var(--accent); }
+.csv-col-flag {
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
 
 /* =========================================================================
    Legend (bottom-left)
