@@ -17,7 +17,7 @@
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <!-- App styles -->
 <link rel="stylesheet" href="css/style.css" />
@@ -25,6 +25,53 @@
 <body>
 
 <div id="map"></div>
+
+<!-- ===================== Hero / Onboarding Overlay ===================== -->
+<div class="hero-overlay" id="hero-overlay" role="dialog" aria-modal="false" aria-labelledby="hero-title">
+  <div class="hero-card glass">
+    <button class="hero-close" id="hero-close" aria-label="Dismiss">×</button>
+    <div class="hero-eyebrow">
+      <span class="hero-dot"></span>
+      Global Urban Intelligence Platform
+    </div>
+    <h2 id="hero-title" class="hero-title">UrbanPulse</h2>
+    <p class="hero-sub">Walkability Intelligence for Cities</p>
+    <p class="hero-body">
+      Open-source, research-grade analytics for planners, policy makers, and
+      municipal researchers. Search any city, layer OpenStreetMap data, and
+      benchmark walkability under custom indicator weights.
+    </p>
+    <ul class="hero-features">
+      <li><span class="hf-check">✓</span>Walkability</li>
+      <li><span class="hf-check">✓</span>Accessibility</li>
+      <li><span class="hf-check">✓</span>Transit Connectivity</li>
+      <li><span class="hf-check">✓</span>Urban Safety</li>
+      <li><span class="hf-check">✓</span>Public Amenities</li>
+      <li><span class="hf-check">✓</span>Equity Indicators</li>
+    </ul>
+    <div class="hero-actions">
+      <button class="hero-btn hero-btn-primary" id="hero-explore">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        Explore Kolkata
+      </button>
+      <button class="hero-btn hero-btn-ghost" id="hero-upload">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Upload Dataset
+      </button>
+      <button class="hero-btn hero-btn-ghost" id="hero-search">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/>
+        </svg>
+        Search City
+      </button>
+    </div>
+    <p class="hero-foot">Powered by OpenStreetMap · Nominatim · Made by IIT KGP · Open source</p>
+  </div>
+</div>
 
 <div class="diag" id="diag" role="status" aria-live="polite">
   <span class="dot"></span>
@@ -37,25 +84,21 @@
     <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
       <defs>
         <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%"  stop-color="#d4a574"/>
-          <stop offset="100%" stop-color="#65a30d"/>
+          <stop offset="0%"  stop-color="#38BDF8"/>
+          <stop offset="100%" stop-color="#10B981"/>
         </linearGradient>
       </defs>
-      <circle cx="20" cy="20" r="18" fill="none" stroke="url(#lg)" stroke-width="1.5"/>
-      <path d="M14 28 L14 19 L17 14 L20 19 L20 28" stroke="url(#lg)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M22 28 L22 16 L25 12 L28 16 L28 28" stroke="url(#lg)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="17" cy="11" r="1.8" fill="#d4a574"/>
-      <circle cx="25" cy="9"  r="1.8" fill="#65a30d"/>
+      <circle cx="20" cy="20" r="17" fill="none" stroke="url(#lg)" stroke-width="1.6"/>
+      <path d="M10 24 L15 24 L18 14 L22 28 L25 20 L30 20"
+            stroke="url(#lg)" stroke-width="2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="20" r="2" fill="#38BDF8"/>
     </svg>
     <div class="brand-text">
-      <div class="eyebrow">Global Urban Intelligence</div>
+      <div class="eyebrow">Global Urban Intelligence Platform</div>
       <h1>Urban<em>Pulse</em></h1>
     </div>
   </div>
-  <p class="subtitle">
-    Open-source walkability &amp; mobility analytics for any city in the world.
-    OpenStreetMap-driven, AI-augmented, research-grade.
-  </p>
 
   <!-- ===================== City Search ===================== -->
   <div class="city-search" id="city-search" role="search">
@@ -74,10 +117,34 @@
       aria-controls="city-search-results"
     />
     <ul id="city-search-results" class="cs-results" role="listbox" hidden></ul>
-    <div class="cs-hint">Powered by OpenStreetMap · Nominatim</div>
   </div>
 
-  <p class="credit">Made by <strong>IIT KGP</strong> · Open source · OSM data © contributors</p>
+  <!-- ===================== Quick Actions ===================== -->
+  <div class="quick-actions" role="toolbar" aria-label="Quick actions">
+    <button class="qa-btn" data-action="explore-kolkata" title="Explore Kolkata">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M5 19l2.5-2.5M16.5 7.5L19 5"/>
+        <circle cx="12" cy="12" r="4"/>
+      </svg>
+      <span>Explore Kolkata</span>
+    </button>
+    <button class="qa-btn" data-action="upload" title="Upload dataset">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Upload</span>
+    </button>
+    <button class="qa-btn" data-action="report" title="Download report">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-linejoin="round"/>
+        <path d="M14 3v6h6" stroke-linejoin="round"/>
+      </svg>
+      <span>Report</span>
+    </button>
+  </div>
+
+  <!-- ===================== Recent Cities ===================== -->
+  <div class="recent-cities" id="recent-cities" aria-label="Recent cities"></div>
 </header>
 
 <!-- ===================== Mobile Toggle ===================== -->
@@ -92,36 +159,125 @@
   <button class="panel-collapse" id="panel-collapse" title="Collapse panel" aria-label="Collapse panel">‹</button>
 
   <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="data"     role="tab" aria-selected="true">Data</button>
-    <button class="tab"        data-tab="layers"   role="tab">Layers</button>
-    <button class="tab"        data-tab="weights"  role="tab">Weights</button>
-    <button class="tab"        data-tab="3d"       role="tab">3D/VR</button>
-    <button class="tab"        data-tab="map"      role="tab">Map</button>
-    <button class="tab"        data-tab="export"   role="tab">Export</button>
+    <button class="tab active" data-tab="data"      role="tab" aria-selected="true" title="Data">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+        <path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/>
+        <path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/>
+      </svg>
+      <span>Data</span>
+    </button>
+    <button class="tab" data-tab="analytics" role="tab" title="Analytics">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M3 3v18h18"/>
+        <path d="M7 14l3-3 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Analytics</span>
+    </button>
+    <button class="tab" data-tab="layers" role="tab" title="Layers">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M12 2L2 8l10 6 10-6-10-6z"/>
+        <path d="M2 14l10 6 10-6"/>
+        <path d="M2 11l10 6 10-6"/>
+      </svg>
+      <span>Layers</span>
+    </button>
+    <button class="tab" data-tab="weights" role="tab" title="Weights">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M4 21V7m0 0L1 11m3-4l3 4M12 21V3m0 0L9 7m3-4l3 4M20 21v-7m0 0l-3 4m3-4l3 4"/>
+      </svg>
+      <span>Weights</span>
+    </button>
+    <button class="tab" data-tab="3d" role="tab" title="3D / VR">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/>
+        <path d="M3 7l9 5 9-5M12 12v10"/>
+      </svg>
+      <span>3D / VR</span>
+    </button>
+    <button class="tab" data-tab="map" role="tab" title="Map">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/>
+        <path d="M9 4v14M15 6v14"/>
+      </svg>
+      <span>Map</span>
+    </button>
+    <button class="tab" data-tab="export" role="tab" title="Export">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Export</span>
+    </button>
   </nav>
 
   <div class="tab-content">
 
     <!-- ============ DATA TAB ============ -->
     <section class="tab-pane active" data-pane="data">
+
+      <!-- City Profile -->
       <div class="section">
-        <h2 class="section-title">Dataset Overview</h2>
-        <div class="stats-wrap">
-          <div class="stat">
-            <div class="label">Points</div>
-            <div class="value" id="stat-count">—</div>
+        <div class="section-head">
+          <h2 class="section-title">City Profile</h2>
+          <span class="section-tag" id="city-status">Default</span>
+        </div>
+        <div class="city-profile" id="city-profile">
+          <div class="cp-name" id="cp-name">Kolkata, West Bengal</div>
+          <div class="cp-meta" id="cp-meta">
+            <span class="cp-meta-item"><span class="k">Pop.</span><span class="v" id="cp-pop">14.9 M</span></span>
+            <span class="cp-meta-item"><span class="k">Area</span><span class="v" id="cp-area">206 km²</span></span>
+            <span class="cp-meta-item"><span class="k">Density</span><span class="v" id="cp-density">24k / km²</span></span>
           </div>
-          <div class="stat">
-            <div class="label">Mean PWS</div>
-            <div class="value" id="stat-mean">—</div>
+        </div>
+      </div>
+
+      <!-- KPI panel -->
+      <div class="section">
+        <div class="section-head">
+          <h2 class="section-title">Key Indicators</h2>
+          <span class="section-tag" id="kpi-status">No data</span>
+        </div>
+        <div class="kpi-empty" id="kpi-empty">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6" stroke-linecap="round"/>
+          </svg>
+          <div class="kpi-empty-msg">
+            <strong>No dataset loaded</strong>
+            <span>Upload a CSV / GeoJSON, or click <em>Explore Kolkata</em> to load the research baseline.</span>
           </div>
-          <div class="stat">
-            <div class="label">Median</div>
-            <div class="value" id="stat-median">—</div>
+        </div>
+        <div class="kpi-grid" id="kpi-grid" hidden>
+          <div class="kpi-card">
+            <div class="kpi-head">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+              <span>Points</span>
+            </div>
+            <div class="kpi-value" id="stat-count">—</div>
+            <div class="kpi-foot" id="stat-visible-foot"><span id="stat-visible">—</span> in view</div>
           </div>
-          <div class="stat">
-            <div class="label">In View</div>
-            <div class="value" id="stat-visible">—</div>
+          <div class="kpi-card">
+            <div class="kpi-head">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Mean PWS</span>
+            </div>
+            <div class="kpi-value" id="stat-mean">—</div>
+            <div class="kpi-foot">walkability index</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-head">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12h6l3-9 3 18 3-9h3"/></svg>
+              <span>Median</span>
+            </div>
+            <div class="kpi-value" id="stat-median">—</div>
+            <div class="kpi-foot">range / distribution</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-head">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4 12H1M23 12h-3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
+              <span>Coverage</span>
+            </div>
+            <div class="kpi-value" id="stat-coverage">—</div>
+            <div class="kpi-foot">spatial bounds</div>
           </div>
         </div>
       </div>
@@ -170,6 +326,36 @@
           <input type="range" id="range-max" min="0" max="100" value="100" step="1" aria-label="Maximum PWS score" />
         </div>
         <div class="filter-bounds"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+    </section>
+
+    <!-- ============ ANALYTICS TAB ============ -->
+    <section class="tab-pane" data-pane="analytics">
+      <div class="section">
+        <div class="section-head">
+          <h2 class="section-title">Walkability Distribution</h2>
+          <span class="section-tag" id="ana-status">Awaiting data</span>
+        </div>
+        <p class="hint">Live histogram of scores across the currently loaded dataset.</p>
+        <div class="chart-wrap"><canvas id="chart-dist"></canvas></div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Score Bands</h2>
+        <p class="hint">Share of points falling into each qualitative band.</p>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="chart-bands"></canvas></div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Top &amp; Bottom Zones</h2>
+        <p class="hint">Mean walkability of the top and bottom deciles of the loaded points.</p>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="chart-extremes"></canvas></div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Indicator Contributions</h2>
+        <p class="hint">Average value of each indicator (sidewalk, greenery, lighting, crowdedness, crossing safety) — only shown when indicator columns are present in the uploaded dataset.</p>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="chart-indicators"></canvas></div>
       </div>
     </section>
 
@@ -335,14 +521,14 @@
       <div class="section">
         <h2 class="section-title">Basemap</h2>
         <div class="basemap-grid">
+          <button class="basemap-card active" data-base="light">
+            <span class="bm-thumb bm-light"></span><span class="bm-label">Voyager</span>
+          </button>
+          <button class="basemap-card" data-base="osm">
+            <span class="bm-thumb bm-osm"></span><span class="bm-label">OSM</span>
+          </button>
           <button class="basemap-card" data-base="dark">
             <span class="bm-thumb bm-dark"></span><span class="bm-label">Dark</span>
-          </button>
-          <button class="basemap-card" data-base="light">
-            <span class="bm-thumb bm-light"></span><span class="bm-label">Positron</span>
-          </button>
-          <button class="basemap-card active" data-base="osm">
-            <span class="bm-thumb bm-osm"></span><span class="bm-label">OSM</span>
           </button>
           <button class="basemap-card" data-base="sat">
             <span class="bm-thumb bm-sat"></span><span class="bm-label">Satellite</span>
@@ -351,6 +537,7 @@
             <span class="bm-thumb bm-topo"></span><span class="bm-label">Topo</span>
           </button>
         </div>
+        <p class="hint" style="margin-top:12px">Voyager is the recommended professional default — clean, neutral, and high-contrast for analytical overlays.</p>
       </div>
 
       <div class="section">
@@ -534,14 +721,19 @@
 
 <!-- ===================== Legend ===================== -->
 <div class="legend glass">
-  <h2 class="legend-title" id="legend-title">Perceived Walkability Score</h2>
+  <div class="legend-head">
+    <span class="legend-eyebrow">Walkability Index</span>
+    <h2 class="legend-title" id="legend-title">Perceived Walkability Score</h2>
+  </div>
   <div class="legend-bar" id="legend-bar"></div>
-  <div class="legend-labels">
+  <div class="legend-scale">
     <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
   </div>
-  <div class="legend-extremes">
-    <span class="lo">unwalkable</span>
-    <span class="hi">excellent</span>
+  <div class="legend-bands">
+    <div class="lb-row"><span class="lb-sw" style="background:var(--c2)"></span><span class="lb-range">0–25</span><span class="lb-label">Poor</span></div>
+    <div class="lb-row"><span class="lb-sw" style="background:var(--c3)"></span><span class="lb-range">25–50</span><span class="lb-label">Fair</span></div>
+    <div class="lb-row"><span class="lb-sw" style="background:var(--c5)"></span><span class="lb-range">50–75</span><span class="lb-label">Good</span></div>
+    <div class="lb-row"><span class="lb-sw" style="background:var(--c7)"></span><span class="lb-range">75–100</span><span class="lb-label">Excellent</span></div>
   </div>
 </div>
 
@@ -587,6 +779,8 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <!-- Three.js (3D engine) -->
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<!-- Chart.js (analytics dashboard) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <!-- App modules (order matters) -->
 <script src="js/config.js"></script>
@@ -601,6 +795,7 @@
 <script src="js/detail-drawer.js"></script>
 <script src="js/export.js"></script>
 <script src="js/three-scene.js"></script>
+<script src="js/analytics.js"></script>
 <script src="js/ui-controls.js"></script>
 <script src="js/app.js"></script>
 </body>

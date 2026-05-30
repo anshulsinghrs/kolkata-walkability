@@ -109,6 +109,7 @@
     window.UploadLayer.fitToData();
     U.setStatsFromUpload(parsedMeta.stats);
     U.setLegendTitle(`Uploaded · ${parsedMeta.filename}`);
+    if (window.Analytics) window.Analytics.update(recomputed);
     U.setStatus(
       hasIndicators
         ? `✓ Mapped ${recomputed.length.toLocaleString()} points · weights applied`
@@ -124,6 +125,24 @@
     U.hideDetectedColumns();
     U.hideUploadProgress();
     U.setLegendTitle('Perceived Walkability Score');
+    U.clearKPI();
+  }
+
+  function flyToCity(city) {
+    if (city.bbox) {
+      window.MapView.fitToBounds(city.bbox, [60, 60]);
+    } else if (city.center) {
+      window.MapView.getMap().setView(city.center, city.zoom || 11);
+    }
+    U.setCityProfile({
+      name: city.name,
+      population: city.population,
+      area: city.area,
+      density: city.density,
+      tag: 'Active',
+    });
+    U.setLegendTitle(`Walkability — ${city.name}`);
+    U.setStatus(`✓ Viewing ${city.name}`, 'ok');
   }
 
   // ---- Bootstrap ------------------------------------------------------
@@ -234,17 +253,42 @@
       onStatus: (msg, kind) => U.setStatus(msg, kind),
     });
     window.CitySearch.onSelect((place) => {
-      if (place.bbox) {
-        window.MapView.fitToBounds(place.bbox, [60, 60]);
-      } else if (place.center) {
-        window.MapView.getMap().setView(place.center, 13);
-      }
-      U.setStatus(`✓ Viewing ${place.name}`, 'ok');
-      U.setLegendTitle(`Walkability — ${place.name}`);
-      // Future: trigger backend OSMnx fetch for this place's road network
-      // and walkability scoring here. For now the city search re-frames the
-      // basemap; the upload pipeline and any research overlay continue
-      // to work unchanged.
+      flyToCity({
+        name: place.name,
+        bbox: place.bbox,
+        center: place.center,
+        zoom: 13,
+        population: '—',
+        area: '—',
+        density: '—',
+      });
+    });
+
+    // ---- Hero / quick-actions / recent cities --------------------------
+    function exploreDefaultCity() {
+      const c = CFG.DEFAULT_CITY;
+      flyToCity({ ...c, tag: 'Default' });
+    }
+    U.bindHero({ onExplore: exploreDefaultCity });
+    U.bindQuickActions({ onExplore: exploreDefaultCity });
+    U.renderRecentCities(CFG.RECENT_CITIES, (city) => {
+      flyToCity({
+        name: city.name + ', India',
+        center: city.center,
+        zoom: city.zoom,
+        population: '—',
+        area: '—',
+        density: '—',
+      });
+    }, 'Kolkata');
+
+    // Auto-load the default city profile on first paint.
+    U.setCityProfile({
+      name: CFG.DEFAULT_CITY.name,
+      population: CFG.DEFAULT_CITY.population,
+      area: CFG.DEFAULT_CITY.area,
+      density: CFG.DEFAULT_CITY.density,
+      tag: 'Default',
     });
 
     // ---- Optional research-dataset overlay -----------------------------
@@ -279,7 +323,9 @@
     });
 
     if (!manifest) {
-      U.setStatus('Ready — search a city, or upload a CSV / GeoJSON dataset', 'ok');
+      // No research dataset bundled — fly to default city and prompt.
+      window.MapView.fitToBounds(CFG.DEFAULT_CITY.bbox, [60, 60]);
+      U.setStatus('Ready — explore Kolkata, search any city, or upload a dataset', 'ok');
     } else {
       U.setStatsFromManifest(manifest);
       window.MapView.fitToBounds([
@@ -290,7 +336,13 @@
       try {
         U.setStatus(`Loading overview (${manifest.overview.count.toLocaleString()} pts)…`);
         await window.DataLoader.loadOverview();
-        pwsLayer.setData(window.DataLoader.getOverview());
+        const overview = window.DataLoader.getOverview();
+        pwsLayer.setData(overview);
+        // Feed the analytics dashboard from the PWS overview (array of [lon, lat, score])
+        if (window.Analytics && overview && overview.length) {
+          window.Analytics.update(overview.map((d) => ({ weightage: d[2] })));
+          U.revealKPI('Research baseline');
+        }
         U.setStatus(`✓ ${manifest.score_stats.count.toLocaleString()} research points indexed`, 'ok');
       } catch (err) {
         console.error(err);

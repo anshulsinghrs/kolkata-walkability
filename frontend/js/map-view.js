@@ -59,9 +59,11 @@ window.MapView = (function () {
     });
 
     buildBasemaps();
-    currentBase = basemapInstances.osm;
+    const defaultKey = CFG.MAP.DEFAULT_BASEMAP || 'light';
+    currentBase = basemapInstances[defaultKey] || basemapInstances.light;
     currentBase.addTo(map);
-    document.body.dataset.basemap = 'osm';
+    if (defaultKey === 'dark') darkLabelsLayer.addTo(map);
+    document.body.dataset.basemap = defaultKey;
 
     return map;
   }

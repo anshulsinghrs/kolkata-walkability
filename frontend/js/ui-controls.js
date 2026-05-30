@@ -61,12 +61,17 @@ window.UIControls = (function () {
   }
 
   // -------------------------------------------------------------------
-  // Stats
+  // Stats / KPI panel
   // -------------------------------------------------------------------
-  const statCount = document.getElementById('stat-count');
-  const statMean = document.getElementById('stat-mean');
-  const statMedian = document.getElementById('stat-median');
-  const statVisible = document.getElementById('stat-visible');
+  const statCount    = document.getElementById('stat-count');
+  const statMean     = document.getElementById('stat-mean');
+  const statMedian   = document.getElementById('stat-median');
+  const statVisible  = document.getElementById('stat-visible');
+  const statCoverage = document.getElementById('stat-coverage');
+  const kpiGrid      = document.getElementById('kpi-grid');
+  const kpiEmpty     = document.getElementById('kpi-empty');
+  const kpiStatus    = document.getElementById('kpi-status');
+  const anaStatus    = document.getElementById('ana-status');
 
   function fmtCount(n) {
     if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + '<span class="unit">k</span>';
@@ -74,18 +79,59 @@ window.UIControls = (function () {
   }
   function fmtScore(n) { return `${n.toFixed(1)}<span class="unit">/100</span>`; }
 
+  function revealKPI(tag) {
+    if (kpiEmpty)  kpiEmpty.hidden = true;
+    if (kpiGrid)   kpiGrid.hidden  = false;
+    if (kpiStatus) { kpiStatus.textContent = tag || 'Live'; kpiStatus.className = 'section-tag live'; }
+    if (anaStatus) { anaStatus.textContent = tag || 'Live'; anaStatus.className = 'section-tag live'; }
+  }
+  function clearKPI() {
+    if (kpiEmpty)  kpiEmpty.hidden = false;
+    if (kpiGrid)   kpiGrid.hidden  = true;
+    if (kpiStatus) { kpiStatus.textContent = 'No data'; kpiStatus.className = 'section-tag'; }
+    if (anaStatus) { anaStatus.textContent = 'Awaiting data'; anaStatus.className = 'section-tag'; }
+    if (window.Analytics) window.Analytics.clear();
+  }
+
   function setStatsFromManifest(manifest) {
+    revealKPI('Research baseline');
     const s = manifest.score_stats;
     statCount.innerHTML  = fmtCount(s.count);
     statMean.innerHTML   = fmtScore(s.mean);
     statMedian.innerHTML = fmtScore(s.median);
+    if (statCoverage && manifest.bounds) {
+      const dLat = manifest.bounds.max_lat - manifest.bounds.min_lat;
+      const dLon = manifest.bounds.max_lon - manifest.bounds.min_lon;
+      statCoverage.innerHTML = `${dLat.toFixed(2)}°×${dLon.toFixed(2)}°<span class="unit">bbox</span>`;
+    }
   }
   function setStatsFromUpload(stats) {
+    revealKPI('Uploaded');
     statCount.innerHTML  = fmtCount(stats.kept);
     statMean.innerHTML   = fmtScore(stats.weightMean);
     statMedian.innerHTML = `${stats.weightMin.toFixed(0)}–${stats.weightMax.toFixed(0)}<span class="unit">range</span>`;
+    if (statCoverage) {
+      const ratio = stats.total > 0 ? (stats.kept / stats.total) * 100 : 0;
+      statCoverage.innerHTML = `${ratio.toFixed(0)}<span class="unit">% valid</span>`;
+    }
   }
-  function setVisibleCount(n) { statVisible.innerHTML = fmtCount(n); }
+  function setVisibleCount(n) { if (statVisible) statVisible.innerHTML = fmtCount(n); }
+
+  // -------------------------------------------------------------------
+  // City profile card
+  // -------------------------------------------------------------------
+  function setCityProfile(p) {
+    const nameEl = document.getElementById('cp-name');
+    const popEl  = document.getElementById('cp-pop');
+    const areaEl = document.getElementById('cp-area');
+    const denEl  = document.getElementById('cp-density');
+    const tagEl  = document.getElementById('city-status');
+    if (nameEl && p.name)        nameEl.textContent = p.name;
+    if (popEl)                   popEl.textContent  = p.population || '—';
+    if (areaEl)                  areaEl.textContent = p.area || '—';
+    if (denEl)                   denEl.textContent  = p.density || '—';
+    if (tagEl)                   tagEl.textContent  = p.tag || 'Active';
+  }
 
   // -------------------------------------------------------------------
   // Dual-handle range slider
@@ -350,12 +396,94 @@ window.UIControls = (function () {
     });
   }
 
+  // -------------------------------------------------------------------
+  // Hero / onboarding overlay
+  // -------------------------------------------------------------------
+  function bindHero(handlers) {
+    const overlay = document.getElementById('hero-overlay');
+    if (!overlay) return;
+    const close = (key) => {
+      overlay.classList.add('hidden');
+      try { localStorage.setItem('urbanpulse:hero-dismissed', key || '1'); } catch (e) {}
+    };
+    const closeBtn = document.getElementById('hero-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => close('x'));
+    const explore = document.getElementById('hero-explore');
+    if (explore) explore.addEventListener('click', () => { close('explore'); handlers.onExplore && handlers.onExplore(); });
+    const upload = document.getElementById('hero-upload');
+    if (upload) upload.addEventListener('click', () => {
+      close('upload');
+      document.querySelector('.tab[data-tab="data"]').click();
+      setTimeout(() => document.getElementById('file-input').click(), 200);
+    });
+    const search = document.getElementById('hero-search');
+    if (search) search.addEventListener('click', () => {
+      close('search');
+      const input = document.getElementById('city-search-input');
+      if (input) { input.focus(); input.select(); }
+    });
+
+    try {
+      if (localStorage.getItem('urbanpulse:hero-dismissed')) overlay.classList.add('hidden');
+    } catch (e) {}
+  }
+  function showHero() {
+    const overlay = document.getElementById('hero-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+  }
+
+  // -------------------------------------------------------------------
+  // Quick actions in header
+  // -------------------------------------------------------------------
+  function bindQuickActions(handlers) {
+    document.querySelectorAll('.qa-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const a = btn.dataset.action;
+        if (a === 'explore-kolkata' && handlers.onExplore) handlers.onExplore();
+        else if (a === 'upload') {
+          document.querySelector('.tab[data-tab="data"]').click();
+          setTimeout(() => document.getElementById('file-input').click(), 150);
+        }
+        else if (a === 'report') {
+          document.querySelector('.tab[data-tab="export"]').click();
+        }
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Recent cities chips
+  // -------------------------------------------------------------------
+  function renderRecentCities(cities, onSelect, activeName) {
+    const wrap = document.getElementById('recent-cities');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    cities.forEach((c) => {
+      const btn = document.createElement('button');
+      btn.className = 'rc-chip' + (c.name === activeName ? ' active' : '');
+      btn.textContent = c.name;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.rc-chip').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        onSelect && onSelect(c);
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
   return {
     setStatus,
     initTabs,
     setStatsFromManifest,
     setStatsFromUpload,
     setVisibleCount,
+    setCityProfile,
+    revealKPI,
+    clearKPI,
+    bindHero,
+    showHero,
+    bindQuickActions,
+    renderRecentCities,
     onFilterChange,
     onBasemapChange,
     onPWSToggle,
