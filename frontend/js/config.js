@@ -30,16 +30,34 @@ window.URBANPULSE_CONFIG = {
   },
 
   /* ---- Map ----
-         DEFAULT_CENTER frames India (the project's home country) on first
-         load. The user can still search any city worldwide and the map
-         fits to its OSM bounding box. */
+         DEFAULT_CENTER frames Kolkata on first load so users land on a
+         familiar, data-rich view instead of an empty world map. */
   MAP: {
-    DEFAULT_CENTER: [22.5, 79.0],
-    DEFAULT_ZOOM: 5,
+    DEFAULT_CENTER: [22.5726, 88.3639],
+    DEFAULT_ZOOM: 11,
     MIN_ZOOM: 2,
     MAX_ZOOM: 19,
     OVERVIEW_MAX_ZOOM: 13,
+    DEFAULT_BASEMAP: 'light',
   },
+
+  /* ---- Default landing city ---- */
+  DEFAULT_CITY: {
+    name: 'Kolkata, West Bengal, India',
+    center: [22.5726, 88.3639],
+    bbox: [[22.4500, 88.2400], [22.7000, 88.5000]],
+    population: '14.9 M',
+    area: '206.1 km²',
+    density: '24,000 / km²',
+  },
+
+  /* ---- Curated quick-jump cities ---- */
+  RECENT_CITIES: [
+    { name: 'Kolkata',   center: [22.5726, 88.3639], zoom: 11 },
+    { name: 'Delhi',     center: [28.6139, 77.2090], zoom: 10 },
+    { name: 'Bengaluru', center: [12.9716, 77.5946], zoom: 11 },
+    { name: 'Mumbai',    center: [19.0760, 72.8777], zoom: 11 },
+  ],
 
   /* ---- Point rendering (research PWS layer) ---- */
   POINT_RADIUS_BY_ZOOM: {
