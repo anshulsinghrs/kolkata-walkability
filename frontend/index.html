@@ -121,21 +121,21 @@
 
   <!-- ===================== Quick Actions ===================== -->
   <div class="quick-actions" role="toolbar" aria-label="Quick actions">
-    <button class="qa-btn" data-action="explore-kolkata" title="Explore Kolkata">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+    <button class="qa-btn" data-action="explore-kolkata" title="Explore Kolkata" aria-label="Load the default Kolkata view">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M5 19l2.5-2.5M16.5 7.5L19 5"/>
         <circle cx="12" cy="12" r="4"/>
       </svg>
       <span>Explore Kolkata</span>
     </button>
-    <button class="qa-btn" data-action="upload" title="Upload dataset">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+    <button class="qa-btn" data-action="upload" title="Upload dataset" aria-label="Upload a CSV or GeoJSON dataset">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
         <path d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span>Upload</span>
     </button>
-    <button class="qa-btn" data-action="report" title="Download report">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+    <button class="qa-btn" data-action="report" title="Download report" aria-label="Open the export tab">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
         <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-linejoin="round"/>
         <path d="M14 3v6h6" stroke-linejoin="round"/>
       </svg>
@@ -720,20 +720,20 @@
 </aside>
 
 <!-- ===================== Legend ===================== -->
-<div class="legend glass">
+<div class="legend glass" role="region" aria-labelledby="legend-title">
   <div class="legend-head">
     <span class="legend-eyebrow">Walkability Index</span>
     <h2 class="legend-title" id="legend-title">Perceived Walkability Score</h2>
   </div>
-  <div class="legend-bar" id="legend-bar"></div>
-  <div class="legend-scale">
+  <div class="legend-bar" id="legend-bar" role="img" aria-label="Color gradient from red (poor) to green (excellent)"></div>
+  <div class="legend-scale" aria-hidden="true">
     <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
   </div>
-  <div class="legend-bands">
-    <div class="lb-row"><span class="lb-sw" style="background:var(--c2)"></span><span class="lb-range">0–25</span><span class="lb-label">Poor</span></div>
-    <div class="lb-row"><span class="lb-sw" style="background:var(--c3)"></span><span class="lb-range">25–50</span><span class="lb-label">Fair</span></div>
-    <div class="lb-row"><span class="lb-sw" style="background:var(--c5)"></span><span class="lb-range">50–75</span><span class="lb-label">Good</span></div>
-    <div class="lb-row"><span class="lb-sw" style="background:var(--c7)"></span><span class="lb-range">75–100</span><span class="lb-label">Excellent</span></div>
+  <div class="legend-bands" role="list">
+    <div class="lb-row" role="listitem"><span class="lb-sw" style="background:var(--c2)" aria-hidden="true"></span><span class="lb-range">0–25</span><span class="lb-label">Poor</span></div>
+    <div class="lb-row" role="listitem"><span class="lb-sw" style="background:var(--c3)" aria-hidden="true"></span><span class="lb-range">25–50</span><span class="lb-label">Fair</span></div>
+    <div class="lb-row" role="listitem"><span class="lb-sw" style="background:var(--c5)" aria-hidden="true"></span><span class="lb-range">50–75</span><span class="lb-label">Good</span></div>
+    <div class="lb-row" role="listitem"><span class="lb-sw" style="background:var(--c7)" aria-hidden="true"></span><span class="lb-range">75–100</span><span class="lb-label">Excellent</span></div>
   </div>
 </div>
 

@@ -426,6 +426,15 @@ window.UIControls = (function () {
     try {
       if (localStorage.getItem('urbanpulse:hero-dismissed')) overlay.classList.add('hidden');
     } catch (e) {}
+
+    // Escape key dismisses the hero
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.classList.contains('hidden')) close('esc');
+    });
+    // Click on the scrim (outside the card) dismisses
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close('scrim');
+    });
   }
   function showHero() {
     const overlay = document.getElementById('hero-overlay');

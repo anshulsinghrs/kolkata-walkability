@@ -1825,15 +1825,10 @@ body[data-basemap="topo"] .legend {
 @media (max-width: 900px) {
   :root {
     --panel-width: 300px;
-    --header-width: 280px;
+    --header-width: 300px;
   }
-
-  .header {
-    padding: 14px 18px 12px;
-  }
-  .header h1 { font-size: 24px; }
-  .header .subtitle { font-size: 10.5px; }
-  .header .credit { display: none; }
+  .header { padding: 14px 18px 12px; }
+  .header h1 { font-size: 20px; }
 }
 
 /* =========================================================================
@@ -1853,10 +1848,8 @@ body[data-basemap="topo"] .legend {
     max-width: none;
     padding: 12px 16px 10px;
   }
-  .header h1 { font-size: 22px; }
-  .header .subtitle { display: none; }
-  .header .credit { display: none; }
-  .brand .logo { width: 36px; height: 36px; }
+  .header h1 { font-size: 19px; }
+  .brand .logo { width: 34px; height: 34px; }
 
   .diag {
     top: auto;
@@ -1903,9 +1896,7 @@ body[data-basemap="topo"] .legend {
     max-width: none;
     padding: 10px 14px 8px;
   }
-  .legend-title { font-size: 9px; margin-bottom: 8px; }
   .legend-bar { height: 6px; }
-  .legend-extremes { font-size: 10px; }
 
   .detail-drawer {
     width: calc(100vw - 24px);
@@ -2299,4 +2290,204 @@ body::before {
 
 /* =========================================================================
    END REDESIGN 2.0
+   ========================================================================= */
+
+/* =========================================================================
+   REDESIGN 2.1 — Responsive, Animations, Accessibility polish
+   ========================================================================= */
+
+/* ---- Tablet (≤900px): tighter quick actions, single-column features ---- */
+@media (max-width: 900px) {
+  .quick-actions { gap: 4px; }
+  .qa-btn { font-size: 11px; padding: 6px 8px; }
+  .qa-btn span { display: none; }
+  .qa-btn[data-action="explore-kolkata"] span { display: inline; }
+  .hero-card { max-width: 480px; padding: 30px 30px 24px; }
+  .hero-title { font-size: 30px; }
+  .kpi-value { font-size: 19px; }
+}
+
+/* ---- Mobile (≤640px): drawer-style sidebar, full-width hero, stacked KPIs ---- */
+@media (max-width: 640px) {
+  .hero-overlay { padding: 16px; align-items: flex-end; }
+  .hero-card {
+    max-width: 100%;
+    padding: 24px 22px 18px;
+    border-radius: 18px 18px var(--radius-sm) var(--radius-sm);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .hero-title { font-size: 26px; }
+  .hero-sub { font-size: 13px; }
+  .hero-body { font-size: 12px; }
+  .hero-features { grid-template-columns: 1fr 1fr; gap: 5px 10px; padding: 12px; }
+  .hero-features li { font-size: 11.5px; }
+  .hero-actions { flex-direction: column; gap: 6px; }
+  .hero-btn { min-width: 0; width: 100%; padding: 10px 12px; }
+
+  .quick-actions { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .qa-btn { flex: 0 0 auto; }
+  .qa-btn span { display: none; }
+  .qa-btn[data-action="explore-kolkata"] span { display: inline; }
+  .recent-cities { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .rc-chip { flex: 0 0 auto; }
+
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .kpi-value { font-size: 18px; }
+  .kpi-foot { font-size: 9.5px; }
+
+  .city-profile { padding: 12px 14px; }
+  .cp-name { font-size: 14px; }
+  .cp-meta-item .v { font-size: 12px; }
+
+  .section { padding: 14px 16px; }
+  .section-head { margin-bottom: 10px; }
+
+  .chart-wrap { height: 180px; padding: 10px; }
+  .chart-wrap-sm { height: 160px; }
+
+  .tab { font-size: 8.5px; padding: 6px 2px 7px; }
+  .tab svg { width: 13px; height: 13px; }
+
+  .legend { padding: 12px 14px 10px; width: auto; }
+  .legend-title { font-size: 12.5px; }
+  .legend-eyebrow { font-size: 8.5px; }
+  .legend-bands { grid-template-columns: 1fr; gap: 4px; }
+
+  /* Mobile dataset upload zone shrinks */
+  .dropzone { padding: 18px 14px; }
+}
+
+/* ---- Very small phones ---- */
+@media (max-width: 380px) {
+  .hero-features { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .brand .logo { width: 32px; height: 32px; }
+  .header h1 { font-size: 19px; }
+}
+
+/* =========================================================================
+   Animations — entrance, hover micro-interactions
+   ========================================================================= */
+@keyframes kpiCascade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.kpi-card {
+  animation: kpiCascade 0.4s ease-out both;
+}
+.kpi-card:nth-child(1) { animation-delay: 0.02s; }
+.kpi-card:nth-child(2) { animation-delay: 0.08s; }
+.kpi-card:nth-child(3) { animation-delay: 0.14s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+
+@keyframes chartFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.chart-wrap canvas {
+  animation: chartFade 0.45s ease-out;
+}
+
+/* Tab-pane crossfade (replaces the abrupt 0.2s fade) */
+.tab-pane { display: none; }
+.tab-pane.active {
+  display: block;
+  animation: tabFade 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tabFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Quick-action / recent-chip press feedback */
+.qa-btn:active, .rc-chip:active, .hero-btn:active, .basemap-card:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.06s ease-out;
+}
+
+/* Hero badge dot shimmer */
+.hero-dot {
+  position: relative;
+}
+.hero-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  opacity: 0.5;
+  animation: pulseRing 1.6s ease-out infinite;
+}
+@keyframes pulseRing {
+  0%   { transform: scale(0.8); opacity: 0.55; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* =========================================================================
+   Accessibility — focus-visible, reduced motion, contrast
+   ========================================================================= */
+
+/* Crisp focus ring on every interactive surface */
+:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.qa-btn:focus-visible,
+.rc-chip:focus-visible,
+.basemap-card:focus-visible,
+.tab:focus-visible,
+.hero-btn:focus-visible,
+.kpi-card:focus-visible,
+.hero-close:focus-visible,
+.btn:focus-visible,
+.cs-input:focus-visible {
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* Remove the default ring on mouse clicks (we already have hover states) */
+button:focus:not(:focus-visible) { outline: none; }
+
+/* Screen-reader-only utility for non-visual context */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Respect prefers-reduced-motion across every animated surface */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High-contrast mode — strengthen borders & remove translucency */
+@media (prefers-contrast: more) {
+  :root {
+    --border:        rgba(248, 250, 252, 0.35);
+    --border-strong: rgba(248, 250, 252, 0.55);
+    --text-dim:      #CBD5E1;
+    --text-muted:    #94A3B8;
+  }
+  .glass, .hero-card, .kpi-card, .city-profile, .legend, .header, .side-panel {
+    backdrop-filter: none !important;
+    background: var(--panel-deep) !important;
+  }
+}
+
+/* =========================================================================
+   END REDESIGN 2.1
    ========================================================================= */
