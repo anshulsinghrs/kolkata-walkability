@@ -193,12 +193,13 @@ window.UploadLayer = (function () {
     if (clusterGroup && map.hasLayer(clusterGroup)) map.removeLayer(clusterGroup);
   }
 
-  // Watercolor-splat heatmap. Each point paints its own score-colored radial
-  // gradient (opaque at the centre, transparent at the edge) with normal alpha
-  // blending. Pure-red clusters render red, pure-green clusters render green,
-  // and only genuinely mixed areas blend — i.e. it looks like a smoothed
-  // version of the points view rather than a density map. Density still reads
-  // visually because overlapping splats build up opacity.
+  // Isochrone-style heatmap. Renders on a coarse grid (blocky cells) and for
+  // each cell stores the maximum Gaussian "influence" from any nearby point
+  // along with that point's score — Voronoi-with-falloff, not averaging, so a
+  // single green point next to a red cluster keeps its own color. Influence
+  // is then quantised into a few discrete alpha bands, which produces
+  // concentric ring halos around each point (like Stadia's walkshed maps)
+  // rather than a smooth blur.
   const UploadHeatmapLayer = L.Layer.extend({
     onAdd: function (m) {
       this._map = m;
@@ -249,58 +250,90 @@ window.UploadLayer = (function () {
       const data = filteredRows();
       if (!data.length) return;
 
-      const b = this._map.getBounds();
-      const south = b.getSouth(), north = b.getNorth(), west = b.getWest(), east = b.getEast();
       const [wLo, wHi] = weightRange();
       const span = (wHi - wLo) || 1;
 
-      // Pad bounds by one kernel so splats just outside the viewport still
-      // bleed in correctly.
-      const r = CFG.UPLOAD.HEATMAP_RADIUS;
-      const padPx = r;
-      const sw = this._map.containerPointToLatLng([-padPx, size.y + padPx]);
-      const ne = this._map.containerPointToLatLng([size.x + padPx, -padPx]);
+      // Grid resolution: smaller CELL = smoother but slower. ~6-10 px gives
+      // the chunky walkshed look.
+      const CELL = 7;
+      const Wc = Math.max(1, Math.ceil(size.x / CELL));
+      const Hc = Math.max(1, Math.ceil(size.y / CELL));
+      const N = Wc * Hc;
+
+      // Falloff radius. We multiply HEATMAP_RADIUS so individual points have
+      // room to spread into multiple visible bands before fading out.
+      const r = CFG.UPLOAD.HEATMAP_RADIUS * 1.6;
+      const rCell = r / CELL;
+      const sigma = rCell * 0.45;
+      const twoSigmaSq = 2 * sigma * sigma;
+      const rCellSq = rCell * rCell;
+      const kr = Math.ceil(rCell);
+
+      // Pad bounds by one falloff radius so points just off-screen still bleed in.
+      const sw = this._map.containerPointToLatLng([-r, size.y + r]);
+      const ne = this._map.containerPointToLatLng([size.x + r, -r]);
       const padSouth = sw.lat, padNorth = ne.lat, padWest = sw.lng, padEast = ne.lng;
 
-      const userA = style.opacity;
-      // Per-splat opacity: low enough that two or three reds can stack
-      // without saturating to black, high enough that a single point still
-      // reads. Overlapping splats accumulate via normal alpha blending so
-      // dense regions naturally read as more saturated.
-      const centerAlpha = Math.min(1, 0.55 * userA);
-
-      ctx.globalCompositeOperation = 'source-over';
-
-      // Pre-render one sprite per gradient bin so the per-point inner loop is
-      // just a drawImage. Bin scores into BINS buckets along the gradient.
-      const BINS = 24;
-      const sprites = new Array(BINS);
-      const spriteSize = Math.ceil(r * 2);
-      for (let k = 0; k < BINS; k++) {
-        const score = ((k + 0.5) / BINS) * 100;
-        const c = gradientColor(score);
-        const sc = document.createElement('canvas');
-        sc.width = spriteSize;
-        sc.height = spriteSize;
-        const sctx = sc.getContext('2d');
-        const grad = sctx.createRadialGradient(r, r, 0, r, r, r);
-        grad.addColorStop(0,    `rgba(${c[0]},${c[1]},${c[2]},${centerAlpha})`);
-        grad.addColorStop(0.55, `rgba(${c[0]},${c[1]},${c[2]},${centerAlpha * 0.45})`);
-        grad.addColorStop(1,    `rgba(${c[0]},${c[1]},${c[2]},0)`);
-        sctx.fillStyle = grad;
-        sctx.fillRect(0, 0, spriteSize, spriteSize);
-        sprites[k] = sc;
-      }
+      const bestInfluence = new Float32Array(N);
+      const bestScore = new Float32Array(N);
 
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         if (row.latitude < padSouth || row.latitude > padNorth) continue;
         if (row.longitude < padWest || row.longitude > padEast) continue;
         const pt = this._map.latLngToContainerPoint([row.latitude, row.longitude]);
-        const norm = (row.weightage - wLo) / span; // 0..1
-        let bin = Math.floor(norm * BINS);
-        if (bin < 0) bin = 0; else if (bin >= BINS) bin = BINS - 1;
-        ctx.drawImage(sprites[bin], pt.x - r, pt.y - r);
+        const cx = pt.x / CELL;
+        const cy = pt.y / CELL;
+        const norm = (row.weightage - wLo) / span;
+
+        const x0 = Math.max(0, Math.floor(cx - kr));
+        const x1 = Math.min(Wc - 1, Math.ceil(cx + kr));
+        const y0 = Math.max(0, Math.floor(cy - kr));
+        const y1 = Math.min(Hc - 1, Math.ceil(cy + kr));
+
+        for (let y = y0; y <= y1; y++) {
+          const dy = y - cy;
+          const dySq = dy * dy;
+          const rowBase = y * Wc;
+          for (let x = x0; x <= x1; x++) {
+            const dx = x - cx;
+            const dSq = dx * dx + dySq;
+            if (dSq > rCellSq) continue;
+            const inf = Math.exp(-dSq / twoSigmaSq);
+            const idx = rowBase + x;
+            if (inf > bestInfluence[idx]) {
+              bestInfluence[idx] = inf;
+              bestScore[idx] = norm;
+            }
+          }
+        }
+      }
+
+      // Discrete influence bands → ring halos around each point. Inner band
+      // = closest to a point (most opaque), outer = furthest still visible.
+      // Tweak thresholds/alphas together to control ring width.
+      const BAND_THRESHOLDS = [0.78, 0.50, 0.28, 0.13, 0.05];
+      const BAND_ALPHAS     = [0.95, 0.82, 0.68, 0.52, 0.34];
+      const NBANDS = BAND_THRESHOLDS.length;
+      const userA = style.opacity;
+
+      ctx.globalCompositeOperation = 'source-over';
+
+      for (let y = 0; y < Hc; y++) {
+        const py = y * CELL;
+        for (let x = 0; x < Wc; x++) {
+          const idx = y * Wc + x;
+          const inf = bestInfluence[idx];
+          if (inf < BAND_THRESHOLDS[NBANDS - 1]) continue;
+          let band = NBANDS - 1;
+          for (let k = 0; k < NBANDS; k++) {
+            if (inf >= BAND_THRESHOLDS[k]) { band = k; break; }
+          }
+          const c = gradientColor(bestScore[idx] * 100);
+          const a = BAND_ALPHAS[band] * userA;
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+          ctx.fillRect(x * CELL, py, CELL + 0.5, CELL + 0.5);
+        }
       }
     },
   });
