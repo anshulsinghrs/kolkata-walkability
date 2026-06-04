@@ -193,11 +193,12 @@ window.UploadLayer = (function () {
     if (clusterGroup && map.hasLayer(clusterGroup)) map.removeLayer(clusterGroup);
   }
 
-  // Score-averaging heatmap. Unlike Leaflet.heat (which colors by density and
-  // therefore paints any dense cluster with the top of the gradient), this
-  // layer splats a Gaussian kernel for every point into two buffers and colors
-  // each pixel by the *weighted average* of the underlying weightage values,
-  // so red points produce red heat and green points produce green heat.
+  // Watercolor-splat heatmap. Each point paints its own score-colored radial
+  // gradient (opaque at the centre, transparent at the edge) with normal alpha
+  // blending. Pure-red clusters render red, pure-green clusters render green,
+  // and only genuinely mixed areas blend — i.e. it looks like a smoothed
+  // version of the points view rather than a density map. Density still reads
+  // visually because overlapping splats build up opacity.
   const UploadHeatmapLayer = L.Layer.extend({
     onAdd: function (m) {
       this._map = m;
@@ -231,9 +232,10 @@ window.UploadLayer = (function () {
       const size = this._map.getSize();
       if (size.x === 0 || size.y === 0) return;
 
-      if (this._canvas.width !== size.x || this._canvas.height !== size.y) {
-        this._canvas.width = size.x;
-        this._canvas.height = size.y;
+      const dpr = window.devicePixelRatio || 1;
+      if (this._canvas.width !== size.x * dpr || this._canvas.height !== size.y * dpr) {
+        this._canvas.width = size.x * dpr;
+        this._canvas.height = size.y * dpr;
         this._canvas.style.width = size.x + 'px';
         this._canvas.style.height = size.y + 'px';
       }
@@ -241,6 +243,7 @@ window.UploadLayer = (function () {
       L.DomUtil.setPosition(this._canvas, topLeft);
 
       const ctx = this._canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size.x, size.y);
 
       const data = filteredRows();
@@ -251,80 +254,54 @@ window.UploadLayer = (function () {
       const [wLo, wHi] = weightRange();
       const span = (wHi - wLo) || 1;
 
-      // Render into a downsampled buffer for performance, then scale up with
-      // bilinear smoothing — gives us the blur of Leaflet.heat for free.
-      const SCALE = 3;
-      const W = Math.max(1, Math.ceil(size.x / SCALE));
-      const H = Math.max(1, Math.ceil(size.y / SCALE));
+      // Pad bounds by one kernel so splats just outside the viewport still
+      // bleed in correctly.
+      const r = CFG.UPLOAD.HEATMAP_RADIUS;
+      const padPx = r;
+      const sw = this._map.containerPointToLatLng([-padPx, size.y + padPx]);
+      const ne = this._map.containerPointToLatLng([size.x + padPx, -padPx]);
+      const padSouth = sw.lat, padNorth = ne.lat, padWest = sw.lng, padEast = ne.lng;
 
-      const heatR = CFG.UPLOAD.HEATMAP_RADIUS;       // screen px
-      const r = Math.max(2, heatR / SCALE);          // buffer px
-      const rSq = r * r;
-      const twoSigmaSq = 2 * (r * 0.5) * (r * 0.5);
-      const kernelR = Math.ceil(r);
+      const userA = style.opacity;
+      // Per-splat opacity: low enough that two or three reds can stack
+      // without saturating to black, high enough that a single point still
+      // reads. Overlapping splats accumulate via normal alpha blending so
+      // dense regions naturally read as more saturated.
+      const centerAlpha = Math.min(1, 0.55 * userA);
 
-      const N = W * H;
-      const scoreSum = new Float32Array(N);
-      const weightSum = new Float32Array(N);
+      ctx.globalCompositeOperation = 'source-over';
+
+      // Pre-render one sprite per gradient bin so the per-point inner loop is
+      // just a drawImage. Bin scores into BINS buckets along the gradient.
+      const BINS = 24;
+      const sprites = new Array(BINS);
+      const spriteSize = Math.ceil(r * 2);
+      for (let k = 0; k < BINS; k++) {
+        const score = ((k + 0.5) / BINS) * 100;
+        const c = gradientColor(score);
+        const sc = document.createElement('canvas');
+        sc.width = spriteSize;
+        sc.height = spriteSize;
+        const sctx = sc.getContext('2d');
+        const grad = sctx.createRadialGradient(r, r, 0, r, r, r);
+        grad.addColorStop(0,    `rgba(${c[0]},${c[1]},${c[2]},${centerAlpha})`);
+        grad.addColorStop(0.55, `rgba(${c[0]},${c[1]},${c[2]},${centerAlpha * 0.45})`);
+        grad.addColorStop(1,    `rgba(${c[0]},${c[1]},${c[2]},0)`);
+        sctx.fillStyle = grad;
+        sctx.fillRect(0, 0, spriteSize, spriteSize);
+        sprites[k] = sc;
+      }
 
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
-        if (row.latitude < south || row.latitude > north) continue;
-        if (row.longitude < west || row.longitude > east) continue;
+        if (row.latitude < padSouth || row.latitude > padNorth) continue;
+        if (row.longitude < padWest || row.longitude > padEast) continue;
         const pt = this._map.latLngToContainerPoint([row.latitude, row.longitude]);
-        const cx = pt.x / SCALE;
-        const cy = pt.y / SCALE;
-        const norm = (row.weightage - wLo) / span;
-
-        const x0 = Math.max(0, Math.floor(cx - kernelR));
-        const x1 = Math.min(W - 1, Math.ceil(cx + kernelR));
-        const y0 = Math.max(0, Math.floor(cy - kernelR));
-        const y1 = Math.min(H - 1, Math.ceil(cy + kernelR));
-
-        for (let y = y0; y <= y1; y++) {
-          const dy = y - cy;
-          const dySq = dy * dy;
-          const rowBase = y * W;
-          for (let x = x0; x <= x1; x++) {
-            const dx = x - cx;
-            const dSq = dx * dx + dySq;
-            if (dSq > rSq) continue;
-            const w = Math.exp(-dSq / twoSigmaSq);
-            const idx = rowBase + x;
-            weightSum[idx] += w;
-            scoreSum[idx] += w * norm;
-          }
-        }
+        const norm = (row.weightage - wLo) / span; // 0..1
+        let bin = Math.floor(norm * BINS);
+        if (bin < 0) bin = 0; else if (bin >= BINS) bin = BINS - 1;
+        ctx.drawImage(sprites[bin], pt.x - r, pt.y - r);
       }
-
-      const img = ctx.createImageData(W, H);
-      const out = img.data;
-      // Alpha: invisible below epsilon, ramps to full by ~1.5 accumulated weight
-      // (i.e. roughly 2 overlapping points). Respects user opacity slider.
-      const minOpacity = 0.35;
-      const alphaDenom = 1.5;
-      const userA = style.opacity;
-      for (let i = 0; i < N; i++) {
-        const w = weightSum[i];
-        if (w < 0.05) continue;
-        const avg = scoreSum[i] / w;
-        const c = gradientColor(avg * 100);
-        const o = i * 4;
-        out[o]     = c[0];
-        out[o + 1] = c[1];
-        out[o + 2] = c[2];
-        const a = Math.max(minOpacity, Math.min(1, w / alphaDenom));
-        out[o + 3] = Math.round(a * userA * 255);
-      }
-
-      const off = document.createElement('canvas');
-      off.width = W;
-      off.height = H;
-      off.getContext('2d').putImageData(img, 0, 0);
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(off, 0, 0, size.x, size.y);
     },
   });
 
