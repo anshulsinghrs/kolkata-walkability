@@ -39,7 +39,7 @@ window.UploadLayer = (function () {
   let filter = { min: 0, max: 100 };
 
   let pointsCanvas = null;    // custom canvas overlay
-  let heatLayer = null;       // Leaflet.heat
+  let heatLayer = null;       // custom score-averaging canvas overlay
   let clusterGroup = null;    // L.markerClusterGroup
   let pickHandlers = [];
 
@@ -193,25 +193,143 @@ window.UploadLayer = (function () {
     if (clusterGroup && map.hasLayer(clusterGroup)) map.removeLayer(clusterGroup);
   }
 
+  // Score-averaging heatmap. Unlike Leaflet.heat (which colors by density and
+  // therefore paints any dense cluster with the top of the gradient), this
+  // layer splats a Gaussian kernel for every point into two buffers and colors
+  // each pixel by the *weighted average* of the underlying weightage values,
+  // so red points produce red heat and green points produce green heat.
+  const UploadHeatmapLayer = L.Layer.extend({
+    onAdd: function (m) {
+      this._map = m;
+      if (!m.getPane('uploadHeatPane')) {
+        m.createPane('uploadHeatPane');
+        m.getPane('uploadHeatPane').style.zIndex = 459;
+        m.getPane('uploadHeatPane').style.pointerEvents = 'none';
+      }
+      this._canvas = L.DomUtil.create('canvas', 'upload-heat-canvas leaflet-zoom-hide');
+      this._canvas.style.position = 'absolute';
+      this._canvas.style.top = '0';
+      this._canvas.style.left = '0';
+      this._canvas.style.pointerEvents = 'none';
+      m.getPane('uploadHeatPane').appendChild(this._canvas);
+
+      m.on('move', this._render, this);
+      m.on('moveend', this._render, this);
+      m.on('zoomend', this._render, this);
+      m.on('resize', this._render, this);
+      this._render();
+    },
+    onRemove: function (m) {
+      if (this._canvas) L.DomUtil.remove(this._canvas);
+      m.off('move', this._render, this);
+      m.off('moveend', this._render, this);
+      m.off('zoomend', this._render, this);
+      m.off('resize', this._render, this);
+    },
+    _render: function () {
+      if (!this._map || !this._canvas) return;
+      const size = this._map.getSize();
+      if (size.x === 0 || size.y === 0) return;
+
+      if (this._canvas.width !== size.x || this._canvas.height !== size.y) {
+        this._canvas.width = size.x;
+        this._canvas.height = size.y;
+        this._canvas.style.width = size.x + 'px';
+        this._canvas.style.height = size.y + 'px';
+      }
+      const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(this._canvas, topLeft);
+
+      const ctx = this._canvas.getContext('2d');
+      ctx.clearRect(0, 0, size.x, size.y);
+
+      const data = filteredRows();
+      if (!data.length) return;
+
+      const b = this._map.getBounds();
+      const south = b.getSouth(), north = b.getNorth(), west = b.getWest(), east = b.getEast();
+      const [wLo, wHi] = weightRange();
+      const span = (wHi - wLo) || 1;
+
+      // Render into a downsampled buffer for performance, then scale up with
+      // bilinear smoothing — gives us the blur of Leaflet.heat for free.
+      const SCALE = 3;
+      const W = Math.max(1, Math.ceil(size.x / SCALE));
+      const H = Math.max(1, Math.ceil(size.y / SCALE));
+
+      const heatR = CFG.UPLOAD.HEATMAP_RADIUS;       // screen px
+      const r = Math.max(2, heatR / SCALE);          // buffer px
+      const rSq = r * r;
+      const twoSigmaSq = 2 * (r * 0.5) * (r * 0.5);
+      const kernelR = Math.ceil(r);
+
+      const N = W * H;
+      const scoreSum = new Float32Array(N);
+      const weightSum = new Float32Array(N);
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        if (row.latitude < south || row.latitude > north) continue;
+        if (row.longitude < west || row.longitude > east) continue;
+        const pt = this._map.latLngToContainerPoint([row.latitude, row.longitude]);
+        const cx = pt.x / SCALE;
+        const cy = pt.y / SCALE;
+        const norm = (row.weightage - wLo) / span;
+
+        const x0 = Math.max(0, Math.floor(cx - kernelR));
+        const x1 = Math.min(W - 1, Math.ceil(cx + kernelR));
+        const y0 = Math.max(0, Math.floor(cy - kernelR));
+        const y1 = Math.min(H - 1, Math.ceil(cy + kernelR));
+
+        for (let y = y0; y <= y1; y++) {
+          const dy = y - cy;
+          const dySq = dy * dy;
+          const rowBase = y * W;
+          for (let x = x0; x <= x1; x++) {
+            const dx = x - cx;
+            const dSq = dx * dx + dySq;
+            if (dSq > rSq) continue;
+            const w = Math.exp(-dSq / twoSigmaSq);
+            const idx = rowBase + x;
+            weightSum[idx] += w;
+            scoreSum[idx] += w * norm;
+          }
+        }
+      }
+
+      const img = ctx.createImageData(W, H);
+      const out = img.data;
+      // Alpha: invisible below epsilon, ramps to full by ~1.5 accumulated weight
+      // (i.e. roughly 2 overlapping points). Respects user opacity slider.
+      const minOpacity = 0.35;
+      const alphaDenom = 1.5;
+      const userA = style.opacity;
+      for (let i = 0; i < N; i++) {
+        const w = weightSum[i];
+        if (w < 0.05) continue;
+        const avg = scoreSum[i] / w;
+        const c = gradientColor(avg * 100);
+        const o = i * 4;
+        out[o]     = c[0];
+        out[o + 1] = c[1];
+        out[o + 2] = c[2];
+        const a = Math.max(minOpacity, Math.min(1, w / alphaDenom));
+        out[o + 3] = Math.round(a * userA * 255);
+      }
+
+      const off = document.createElement('canvas');
+      off.width = W;
+      off.height = H;
+      off.getContext('2d').putImageData(img, 0, 0);
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(off, 0, 0, size.x, size.y);
+    },
+  });
+
   function buildHeatmap() {
-    if (!window.L.heatLayer) return null;
-    const [wLo, wHi] = weightRange();
-    const span = (wHi - wLo) || 1;
-    const data = filteredRows().map(r => [
-      r.latitude, r.longitude,
-      Math.max(0.05, (r.weightage - wLo) / span),
-    ]);
-    // Gradient as fractions
-    const stops = gradient;
-    const gd = {};
-    for (const s of stops) gd[(s.t / 100).toFixed(2)] = `rgb(${s.color[0]},${s.color[1]},${s.color[2]})`;
-    return L.heatLayer(data, {
-      radius: CFG.UPLOAD.HEATMAP_RADIUS,
-      blur: CFG.UPLOAD.HEATMAP_BLUR,
-      maxZoom: 17,
-      minOpacity: 0.35,
-      gradient: gd,
-    });
+    return new UploadHeatmapLayer();
   }
 
   function buildClusters() {
