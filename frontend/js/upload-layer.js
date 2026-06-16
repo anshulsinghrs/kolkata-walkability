@@ -429,10 +429,15 @@ window.UploadLayer = (function () {
   function getGradient() { return { name: gradientName, stops: gradient }; }
   function fitToData() {
     if (!rows.length || !map) return;
-    const lats = rows.map(r => r.latitude);
-    const lons = rows.map(r => r.longitude);
-    const south = Math.min(...lats), north = Math.max(...lats);
-    const west = Math.min(...lons), east = Math.max(...lons);
+    let south = Infinity, north = -Infinity, west = Infinity, east = -Infinity;
+    for (let i = 0; i < rows.length; i++) {
+      const lat = rows[i].latitude, lon = rows[i].longitude;
+      if (lat < south) south = lat;
+      if (lat > north) north = lat;
+      if (lon < west) west = lon;
+      if (lon > east) east = lon;
+    }
+    if (!Number.isFinite(south)) return;
     map.fitBounds([[south, west], [north, east]], { padding: [40, 40] });
   }
 

@@ -15,12 +15,17 @@ window.DetailDrawer = (function () {
   const bodyEl = document.getElementById('dd-body');
   const imgEl = document.getElementById('dd-image');
   const closeBtn = document.getElementById('dd-close');
+  let priorFocus = null;
 
   closeBtn.addEventListener('click', close);
+  drawer.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) close();
+  });
 
   function escape(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
   }
 
   function row(k, v) {
@@ -31,9 +36,14 @@ window.DetailDrawer = (function () {
   function close() {
     drawer.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
+    if (priorFocus && typeof priorFocus.focus === 'function') {
+      try { priorFocus.focus(); } catch (e) {}
+      priorFocus = null;
+    }
   }
 
   function open(point) {
+    priorFocus = document.activeElement;
     const lat = point.latitude;
     const lon = point.longitude;
     const score = point.weightage;
@@ -80,16 +90,21 @@ window.DetailDrawer = (function () {
     bodyEl.innerHTML = html;
 
     if (point.image_url && /^https?:\/\//i.test(point.image_url)) {
+      imgEl.referrerPolicy = 'no-referrer';
+      imgEl.crossOrigin = 'anonymous';
+      imgEl.alt = point.category || point.hazard_type || 'Point image';
       imgEl.src = point.image_url;
       imgEl.hidden = false;
       imgEl.onerror = () => { imgEl.hidden = true; };
     } else {
       imgEl.hidden = true;
       imgEl.removeAttribute('src');
+      imgEl.alt = '';
     }
 
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
+    setTimeout(() => { try { closeBtn.focus(); } catch (e) {} }, 50);
   }
 
   return { open, close };

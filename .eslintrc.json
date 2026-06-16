@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "globals": {
+    "L": "readonly",
+    "Papa": "readonly",
+    "THREE": "readonly",
+    "Chart": "readonly",
+    "URBANPULSE_CONFIG": "readonly"
+  },
+  "extends": ["eslint:recommended"],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "no-empty": ["error", { "allowEmptyCatch": true }],
+    "no-prototype-builtins": "off",
+    "no-inner-declarations": "off",
+    "no-undef": "error",
+    "eqeqeq": ["warn", "smart"]
+  },
+  "ignorePatterns": ["frontend/data/", "node_modules/", "*.min.js"]
+}

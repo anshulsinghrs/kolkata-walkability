@@ -1,0 +1,5 @@
+frontend/data/
+node_modules/
+.github/
+docs/
+*.min.js

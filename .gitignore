@@ -25,5 +25,8 @@ frontend/data/
 # Allow the demo CSV if you want to commit one
 !backend/demo_data/*.csv
 
-# Node (in case you add tooling later)
+# Node tooling (eslint, prettier — see package.json)
 node_modules/
+package-lock.json
+.pnpm-lock.yaml
+yarn.lock

@@ -1,0 +1,20 @@
+{
+  "name": "urbanpulse",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source global urban walkability and mobility intelligence platform.",
+  "homepage": "https://github.com/anshulsinghrs/kolkata-walkability",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint frontend/js",
+    "lint:fix": "eslint frontend/js --fix",
+    "format": "prettier --write \"frontend/**/*.{js,css,html}\" \"*.{md,json,yml}\"",
+    "format:check": "prettier --check \"frontend/**/*.{js,css,html}\" \"*.{md,json,yml}\"",
+    "check": "npm run lint",
+    "serve": "python3 -m http.server 8000 --directory frontend"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
+  }
+}

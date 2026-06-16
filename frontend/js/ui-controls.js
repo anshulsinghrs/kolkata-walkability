@@ -14,13 +14,15 @@ window.UIControls = (function () {
   // -------------------------------------------------------------------
   const diagEl = document.getElementById('diag');
   const diagText = document.getElementById('diag-text');
+  let statusFadeTimer = null;
 
   function setStatus(text, kind) {
     diagText.textContent = text;
     diagEl.classList.remove('ok', 'err', 'fade');
+    if (statusFadeTimer) { clearTimeout(statusFadeTimer); statusFadeTimer = null; }
     if (kind === 'ok') {
       diagEl.classList.add('ok');
-      setTimeout(() => diagEl.classList.add('fade'), 2500);
+      statusFadeTimer = setTimeout(() => diagEl.classList.add('fade'), 2500);
     } else if (kind === 'err') {
       diagEl.classList.add('err');
     }
@@ -52,12 +54,22 @@ window.UIControls = (function () {
 
     const mobileToggle = document.getElementById('mobile-panel-toggle');
     if (mobileToggle) {
+      mobileToggle.setAttribute('aria-controls', 'side-panel');
+      mobileToggle.setAttribute('aria-expanded', 'false');
       mobileToggle.addEventListener('click', () => {
         const isOpen = panel.classList.toggle('mobile-open');
         panel.classList.remove('collapsed');
         mobileToggle.classList.toggle('active', isOpen);
+        mobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
     }
+
+    collapseBtn.setAttribute('aria-controls', 'side-panel');
+    collapseBtn.setAttribute('aria-expanded', 'true');
+    collapseBtn.addEventListener('click', () => {
+      const isCollapsed = panel.classList.contains('collapsed');
+      collapseBtn.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+    });
   }
 
   // -------------------------------------------------------------------
@@ -260,8 +272,11 @@ window.UIControls = (function () {
     const input = document.getElementById('file-input');
 
     dz.addEventListener('click', () => input.click());
+    dz.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+    });
     input.addEventListener('change', () => {
-      if (input.files && input.files[0]) handler(input.files[0]);
+      if (input.files && input.files.length) handler(Array.from(input.files));
       input.value = '';
     });
     ['dragenter', 'dragover'].forEach((ev) => {
@@ -277,8 +292,8 @@ window.UIControls = (function () {
       });
     });
     dz.addEventListener('drop', (e) => {
-      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) handler(f);
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files.length) handler(Array.from(files));
     });
   }
 
@@ -292,32 +307,46 @@ window.UIControls = (function () {
     document.getElementById('upload-status').hidden = true;
   }
 
-  function showDetectedColumns(headers, mapping, stats) {
+  function makeDetectedRow(roleText, colText, cls) {
+    const li = document.createElement('li');
+    li.className = cls;
+    const roleSpan = document.createElement('span');
+    roleSpan.className = 'role';
+    roleSpan.textContent = roleText;
+    const colSpan = document.createElement('span');
+    colSpan.className = 'col';
+    colSpan.textContent = colText;
+    li.append(roleSpan, colSpan);
+    return li;
+  }
+
+  function showDetectedColumns(headers, mapping, stats, fileSummary) {
     const wrap = document.getElementById('detected');
     const list = document.getElementById('detected-list');
     wrap.hidden = false;
-    list.innerHTML = '';
+    list.textContent = '';
     const roles = ['latitude', 'longitude', 'weightage', 'category',
                    'timestamp', 'notes', 'image_url', 'hazard_type',
                    'sidewalk', 'greenery', 'lighting', 'crowdedness', 'crossing_safety'];
     for (const role of roles) {
       const col = mapping[role];
       if (!col && !['latitude', 'longitude', 'weightage'].includes(role)) continue;
-      const li = document.createElement('li');
-      li.className = col ? 'col-ok' : 'col-missing';
-      li.innerHTML = `<span class="role">${role}</span><span class="col">${col || 'not found'}</span>`;
-      list.appendChild(li);
+      list.appendChild(makeDetectedRow(role, col || 'not found', col ? 'col-ok' : 'col-missing'));
+    }
+    if (fileSummary) {
+      list.appendChild(makeDetectedRow('files', fileSummary, 'col-stats'));
     }
     if (stats) {
-      const li = document.createElement('li');
-      li.className = 'col-stats';
-      li.innerHTML = `<span class="role">rows</span><span class="col">${stats.kept.toLocaleString()} / ${stats.total.toLocaleString()} valid</span>`;
-      list.appendChild(li);
+      list.appendChild(makeDetectedRow(
+        'rows',
+        `${stats.kept.toLocaleString()} / ${stats.total.toLocaleString()} valid`,
+        'col-stats',
+      ));
     }
   }
   function hideDetectedColumns() {
     document.getElementById('detected').hidden = true;
-    document.getElementById('detected-list').innerHTML = '';
+    document.getElementById('detected-list').textContent = '';
   }
 
   function onMapData(handler) {
@@ -402,9 +431,31 @@ window.UIControls = (function () {
   function bindHero(handlers) {
     const overlay = document.getElementById('hero-overlay');
     if (!overlay) return;
+    let priorFocus = null;
+
+    function focusableInside() {
+      return overlay.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+    }
+    function trapTab(e) {
+      if (e.key !== 'Tab') return;
+      const items = focusableInside();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
     const close = (key) => {
       overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', trapTab, true);
       try { localStorage.setItem('urbanpulse:hero-dismissed', key || '1'); } catch (e) {}
+      if (priorFocus && typeof priorFocus.focus === 'function') {
+        try { priorFocus.focus(); } catch (e) {}
+      }
     };
     const closeBtn = document.getElementById('hero-close');
     if (closeBtn) closeBtn.addEventListener('click', () => close('x'));
@@ -423,15 +474,22 @@ window.UIControls = (function () {
       if (input) { input.focus(); input.select(); }
     });
 
-    try {
-      if (localStorage.getItem('urbanpulse:hero-dismissed')) overlay.classList.add('hidden');
-    } catch (e) {}
+    let dismissed = false;
+    try { dismissed = !!localStorage.getItem('urbanpulse:hero-dismissed'); } catch (e) {}
+    if (dismissed) {
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+    } else {
+      overlay.setAttribute('aria-hidden', 'false');
+      priorFocus = document.activeElement;
+      const first = focusableInside()[0];
+      if (first) setTimeout(() => first.focus(), 50);
+      document.addEventListener('keydown', trapTab, true);
+    }
 
-    // Escape key dismisses the hero
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !overlay.classList.contains('hidden')) close('esc');
     });
-    // Click on the scrim (outside the card) dismisses
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close('scrim');
     });

@@ -27,8 +27,9 @@ the top-left, pick a result, and the map flies to its OSM bounding box.
 From there you can:
 
 - Switch between **5 basemaps** (Dark, Positron, OSM, Satellite, Topo).
-- **Upload** a CSV, GeoJSON, or KML file — points are streamed in by
-  PapaParse and rendered as points, a weighted heatmap, or clusters.
+- **Upload** one or more CSV / GeoJSON / KML files at once — points are
+  streamed in by PapaParse, merged across files, and rendered as points,
+  a weighted heatmap, or clusters. 50 MB per-file cap.
 - **Recompute walkability** live with sliders for sidewalk, greenery,
   lighting, crowdedness, and crossing safety (L1-normalised weights).
 - **Filter by score**, swap colour gradients (walkability / viridis /
@@ -134,6 +135,17 @@ Push to `main`. The workflow in `.github/workflows/deploy.yml` deploys
 
 Full deployment walkthrough: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
+### 4. Lint & format (optional)
+
+```bash
+npm install            # one-time, installs eslint + prettier
+npm run lint           # ESLint over frontend/js
+npm run format         # Prettier --write over frontend + root configs
+```
+
+CI runs ESLint on every push and PR (`.github/workflows/lint.yml`).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor workflow.
+
 ---
 
 ## Tech stack
@@ -165,7 +177,7 @@ Open issues and pull requests are welcome. Priority areas:
 
 ## License
 
-- **Code:** MIT
+- **Code:** MIT — see [`LICENSE`](LICENSE).
 - **OpenStreetMap data:** © OpenStreetMap contributors,
   [Open Database License](https://www.openstreetmap.org/copyright)
 - **Original research dataset (Kolkata PWS):** please cite the underlying

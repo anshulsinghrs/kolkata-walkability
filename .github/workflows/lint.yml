@@ -1,0 +1,46 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  js:
+    name: ESLint + Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dev dependencies
+        run: npm install --no-audit --no-fund --no-save eslint@^8.57.0 prettier@^3.2.5
+
+      - name: ESLint
+        run: npx eslint frontend/js
+
+      # Prettier check is non-blocking until the existing codebase is reformatted.
+      - name: Prettier (advisory)
+        continue-on-error: true
+        run: npx prettier --check "frontend/**/*.{js,css,html}" "*.{md,json,yml}"
+
+  python:
+    name: Python syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile-check process_data.py
+        run: python -m py_compile backend/process_data.py

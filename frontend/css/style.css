@@ -19,7 +19,7 @@
   /* ----- Type ----- */
   --text: #F8FAFC;           /* slate-50 */
   --text-dim: #94A3B8;       /* slate-400 */
-  --text-muted: #64748B;     /* slate-500 */
+  --text-muted: #8FA1BC;     /* slate-400/500 mix — WCAG AA on --bg */
 
   /* ----- Brand / interactive ----- */
   --primary: #2563EB;        /* blue-600 */
@@ -745,6 +745,10 @@ body[data-basemap="topo"] .legend {
   background: var(--accent-soft);
   transform: scale(1.01);
   box-shadow: 0 0 0 6px rgba(212, 165, 116, 0.1);
+}
+.dropzone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .dz-icon { color: var(--accent); opacity: 0.8; }
 .dz-text strong {

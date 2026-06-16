@@ -14,38 +14,30 @@ window.MapView = (function () {
   let darkLabelsLayer = null;
   const basemapInstances = {};
 
-  function buildBasemaps() {
+  function getBasemap(key) {
+    if (basemapInstances[key]) return basemapInstances[key];
     const defs = CFG.BASEMAPS;
     const max = CFG.MAP.MAX_ZOOM;
+    const def = defs[key];
+    if (!def) return null;
+    const opts = {
+      attribution: def.attribution,
+      maxZoom: def.maxZoom || max,
+    };
+    if (def.subdomains) opts.subdomains = def.subdomains;
+    basemapInstances[key] = L.tileLayer(def.url, opts);
+    return basemapInstances[key];
+  }
 
-    basemapInstances.dark = L.tileLayer(defs.dark.url, {
-      attribution: defs.dark.attribution,
-      subdomains: defs.dark.subdomains,
-      maxZoom: max,
+  function getDarkLabels() {
+    if (darkLabelsLayer) return darkLabelsLayer;
+    const def = CFG.BASEMAPS.dark;
+    if (!def || !def.labels) return null;
+    darkLabelsLayer = L.tileLayer(def.labels, {
+      subdomains: def.subdomains,
+      maxZoom: CFG.MAP.MAX_ZOOM,
     });
-    darkLabelsLayer = L.tileLayer(defs.dark.labels, {
-      subdomains: defs.dark.subdomains,
-      maxZoom: max,
-    });
-    basemapInstances.light = L.tileLayer(defs.light.url, {
-      attribution: defs.light.attribution,
-      subdomains: defs.light.subdomains,
-      maxZoom: max,
-    });
-    basemapInstances.osm = L.tileLayer(defs.osm.url, {
-      attribution: defs.osm.attribution,
-      subdomains: defs.osm.subdomains,
-      maxZoom: max,
-    });
-    basemapInstances.sat = L.tileLayer(defs.sat.url, {
-      attribution: defs.sat.attribution,
-      maxZoom: max,
-    });
-    basemapInstances.topo = L.tileLayer(defs.topo.url, {
-      attribution: defs.topo.attribution,
-      subdomains: defs.topo.subdomains,
-      maxZoom: defs.topo.maxZoom || max,
-    });
+    return darkLabelsLayer;
   }
 
   function init(elementId) {
@@ -58,26 +50,32 @@ window.MapView = (function () {
       preferCanvas: true,
     });
 
-    buildBasemaps();
     const defaultKey = CFG.MAP.DEFAULT_BASEMAP || 'light';
-    currentBase = basemapInstances[defaultKey] || basemapInstances.light;
+    currentBase = getBasemap(defaultKey) || getBasemap('light');
     currentBase.addTo(map);
-    if (defaultKey === 'dark') darkLabelsLayer.addTo(map);
+    if (defaultKey === 'dark') {
+      const labels = getDarkLabels();
+      if (labels) labels.addTo(map);
+    }
     document.body.dataset.basemap = defaultKey;
 
     return map;
   }
 
   function setBasemap(key) {
-    if (!basemapInstances[key]) return;
+    const next = getBasemap(key);
+    if (!next) return;
     if (currentBase) map.removeLayer(currentBase);
-    if (map.hasLayer(darkLabelsLayer)) map.removeLayer(darkLabelsLayer);
+    if (darkLabelsLayer && map.hasLayer(darkLabelsLayer)) map.removeLayer(darkLabelsLayer);
 
-    currentBase = basemapInstances[key];
+    currentBase = next;
     currentBase.addTo(map);
     currentBase.bringToBack();
 
-    if (key === 'dark') darkLabelsLayer.addTo(map);
+    if (key === 'dark') {
+      const labels = getDarkLabels();
+      if (labels) labels.addTo(map);
+    }
     document.body.dataset.basemap = key;
   }
 

@@ -35,13 +35,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-import os
+import logging
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+log = logging.getLogger("urbanpulse.process_data")
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -62,7 +65,7 @@ DEFAULT_OUTPUT_DIR = REPO_ROOT / "frontend" / "data"
 # ---------------------------------------------------------------------------
 def load_and_clean(csv_path: Path) -> pd.DataFrame:
     """Load CSV and drop rows with invalid coordinates or scores."""
-    print(f"  Reading {csv_path}…")
+    log.info("Reading %s", csv_path)
     df = pd.read_csv(csv_path)
 
     required = {"lon", "lat", "Psw_score"}
@@ -78,7 +81,7 @@ def load_and_clean(csv_path: Path) -> pd.DataFrame:
     df = df[(df["lat"].between(-90, 90)) & (df["lon"].between(-180, 180))]
     n1 = len(df)
     if n0 != n1:
-        print(f"  Dropped {n0 - n1:,} invalid rows ({n1:,} remaining)")
+        log.info("Dropped %s invalid rows (%s remaining)", f"{n0 - n1:,}", f"{n1:,}")
 
     return df.reset_index(drop=True)
 
@@ -149,8 +152,10 @@ def write_overview(df: pd.DataFrame, output_dir: Path, step: int) -> dict[str, A
     path = output_dir / "overview.json"
     with path.open("w") as f:
         json.dump(rows, f, separators=(",", ":"))
-    print(f"  overview.json — {len(rows):,} points "
-          f"({path.stat().st_size / 1024:.1f} KB)")
+    log.info(
+        "overview.json — %s points (%.1f KB)",
+        f"{len(rows):,}", path.stat().st_size / 1024,
+    )
     return {"path": "overview.json", "count": len(rows), "step": step}
 
 
@@ -160,47 +165,57 @@ def write_tiles(
     grid_size: int,
     bounds: dict[str, float],
 ) -> list[dict[str, Any]]:
-    """Group points by (col,row) and write one JSON per non-empty tile."""
+    """Group points by (col,row), write one JSON per non-empty tile.
+
+    Writes to a temporary directory first, then atomically swaps it in once
+    every tile is on disk — a mid-run crash leaves the previous tile set
+    intact rather than producing a manifest that points to deleted files.
+    """
     tiles_dir = output_dir / "tiles"
-    tiles_dir.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".tiles.staging.", dir=output_dir))
 
-    # Wipe any stale tiles
-    for old in tiles_dir.glob("*.json"):
-        old.unlink()
+    try:
+        lon_span = bounds["max_lon"] - bounds["min_lon"]
+        lat_span = bounds["max_lat"] - bounds["min_lat"]
+        cell_lon = lon_span / grid_size
+        cell_lat = lat_span / grid_size
 
-    lon_span = bounds["max_lon"] - bounds["min_lon"]
-    lat_span = bounds["max_lat"] - bounds["min_lat"]
-    cell_lon = lon_span / grid_size
-    cell_lat = lat_span / grid_size
+        tiles_meta: list[dict[str, Any]] = []
+        grouped = df.groupby(["col", "row"], sort=False)
 
-    tiles_meta: list[dict[str, Any]] = []
-    grouped = df.groupby(["col", "row"], sort=False)
+        log.info("Writing %s tile files…", f"{grouped.ngroups:,}")
+        for (col, row), group in grouped:
+            rows = group[["lon", "lat", "Psw_score"]].values.tolist()
+            filename = f"{col}_{row}.json"
+            path = staging / filename
+            with path.open("w") as f:
+                json.dump(rows, f, separators=(",", ":"))
 
-    print(f"  Writing {grouped.ngroups:,} tile files…")
-    for (col, row), group in grouped:
-        rows = group[["lon", "lat", "Psw_score"]].values.tolist()
-        filename = f"{col}_{row}.json"
-        path = tiles_dir / filename
-        with path.open("w") as f:
-            json.dump(rows, f, separators=(",", ":"))
+            tiles_meta.append({
+                "col": int(col),
+                "row": int(row),
+                "file": f"tiles/{filename}",
+                "count": len(rows),
+                "bounds": {
+                    "min_lon": round(bounds["min_lon"] + col * cell_lon, 6),
+                    "max_lon": round(bounds["min_lon"] + (col + 1) * cell_lon, 6),
+                    "min_lat": round(bounds["min_lat"] + row * cell_lat, 6),
+                    "max_lat": round(bounds["min_lat"] + (row + 1) * cell_lat, 6),
+                },
+            })
 
-        tiles_meta.append({
-            "col": int(col),
-            "row": int(row),
-            "file": f"tiles/{filename}",
-            "count": len(rows),
-            "bounds": {
-                "min_lon": round(bounds["min_lon"] + col * cell_lon, 6),
-                "max_lon": round(bounds["min_lon"] + (col + 1) * cell_lon, 6),
-                "min_lat": round(bounds["min_lat"] + row * cell_lat, 6),
-                "max_lat": round(bounds["min_lat"] + (row + 1) * cell_lat, 6),
-            },
-        })
+        if tiles_dir.exists():
+            shutil.rmtree(tiles_dir)
+        staging.rename(tiles_dir)
 
-    total_size = sum((tiles_dir / t["file"].split("/")[-1]).stat().st_size
-                     for t in tiles_meta)
-    print(f"  Tiles total: {total_size / 1024 / 1024:.2f} MB")
-    return tiles_meta
+        total_size = sum((tiles_dir / t["file"].split("/")[-1]).stat().st_size
+                         for t in tiles_meta)
+        log.info("Tiles total: %.2f MB", total_size / 1024 / 1024)
+        return tiles_meta
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+        raise
 
 
 def write_manifest(
@@ -223,10 +238,14 @@ def write_manifest(
         "tiles": tiles_meta,
     }
     path = output_dir / "manifest.json"
-    with path.open("w") as f:
+    tmp = path.with_suffix(".json.tmp")
+    with tmp.open("w") as f:
         json.dump(manifest, f, indent=2)
-    print(f"  manifest.json — {len(tiles_meta):,} tiles indexed "
-          f"({path.stat().st_size / 1024:.1f} KB)")
+    tmp.replace(path)
+    log.info(
+        "manifest.json — %s tiles indexed (%.1f KB)",
+        f"{len(tiles_meta):,}", path.stat().st_size / 1024,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -252,50 +271,67 @@ def main() -> int:
         "--overview-step", type=int, default=DEFAULT_OVERVIEW_STEP,
         help=f"Keep 1 in N points for the overview (default: {DEFAULT_OVERVIEW_STEP})."
     )
+    parser.add_argument(
+        "--verbose", "-v", action="count", default=0,
+        help="Increase log verbosity (-v info, -vv debug).",
+    )
+    parser.add_argument(
+        "--quiet", "-q", action="store_true",
+        help="Suppress all logs below WARNING.",
+    )
     args = parser.parse_args()
 
+    level = logging.WARNING if args.quiet else (
+        logging.DEBUG if args.verbose >= 2 else logging.INFO
+    )
+    logging.basicConfig(level=level, format="%(message)s")
+
     if not args.input.exists():
-        print(f"ERROR: input file not found: {args.input}", file=sys.stderr)
+        log.error("input file not found: %s", args.input)
         return 1
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("=" * 64)
-    print(" UrbanPulse · Walkability-score tile processor")
-    print("=" * 64)
+    log.info("=" * 64)
+    log.info(" UrbanPulse · Walkability-score tile processor")
+    log.info("=" * 64)
 
-    print("\n[1/5] Loading data")
+    log.info("[1/5] Loading data")
     df = load_and_clean(args.input)
     df = round_columns(df)
 
-    print("\n[2/5] Computing bounds & statistics")
+    log.info("[2/5] Computing bounds & statistics")
     bounds = compute_bounds(df)
     score_stats = compute_score_stats(df)
-    print(f"  Bounds: lon [{bounds['min_lon']:.4f}, {bounds['max_lon']:.4f}], "
-          f"lat [{bounds['min_lat']:.4f}, {bounds['max_lat']:.4f}]")
-    print(f"  Scores: mean={score_stats['mean']:.2f}, "
-          f"median={score_stats['median']:.2f}, "
-          f"p90={score_stats['p90']:.2f}")
+    log.info(
+        "Bounds: lon [%.4f, %.4f], lat [%.4f, %.4f]",
+        bounds["min_lon"], bounds["max_lon"],
+        bounds["min_lat"], bounds["max_lat"],
+    )
+    log.info(
+        "Scores: mean=%.2f, median=%.2f, p90=%.2f",
+        score_stats["mean"], score_stats["median"], score_stats["p90"],
+    )
 
-    print(f"\n[3/5] Assigning grid cells ({args.grid} x {args.grid})")
+    log.info("[3/5] Assigning grid cells (%s x %s)", args.grid, args.grid)
     df = assign_tile_indices(df, bounds, args.grid)
 
-    print("\n[4/5] Writing overview")
+    log.info("[4/5] Writing overview")
     overview_meta = write_overview(df, args.output_dir, args.overview_step)
 
-    print("\n[5/5] Writing spatial tiles")
+    log.info("[5/5] Writing spatial tiles")
     tiles_meta = write_tiles(df, args.output_dir, args.grid, bounds)
 
-    print("\nWriting manifest")
+    log.info("Writing manifest")
     write_manifest(
         args.output_dir, bounds, score_stats, args.grid,
         overview_meta, tiles_meta,
         source_file=str(args.input.name),
     )
 
-    print("\n" + "=" * 64)
-    print(f" Done. Output written to: {args.output_dir}")
-    print("=" * 64)
+    log.info("=" * 64)
+    log.info(" Done. Output written to: %s", args.output_dir)
+    log.info("=" * 64)
     return 0
 
 

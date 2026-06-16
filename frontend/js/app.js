@@ -57,40 +57,120 @@
   }
 
   // ---- Upload pipeline ------------------------------------------------
-  async function handleFile(file) {
-    if (!file) return;
+  const MAX_FILE_BYTES = 50 * 1024 * 1024;
+
+  function fmtBytes(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  async function handleFiles(files) {
+    if (!files || !files.length) return;
+    const list = Array.from(files);
+
+    const tooBig = list.find(f => (f.size || 0) > MAX_FILE_BYTES);
+    if (tooBig) {
+      U.setStatus(`✗ "${tooBig.name}" is ${fmtBytes(tooBig.size)} — max ${fmtBytes(MAX_FILE_BYTES)} per file`, 'err');
+      return;
+    }
+
     U.hideDetectedColumns();
-    U.showUploadProgress(0.02, `Reading ${file.name}…`);
+    U.showUploadProgress(0.02, list.length === 1
+      ? `Reading ${list[0].name}…`
+      : `Reading ${list.length} files…`);
+
+    const combinedRows = [];
+    const filenames = [];
+    let combinedHeaders = [];
+    let firstMapping = null;
+    let totalRowsIn = 0;
+    let totalSkipped = 0;
+    let weightSum = 0, weightMin = Infinity, weightMax = -Infinity, weightedCount = 0;
+
     try {
-      const result = await window.CSVLoader.parseFile(file, {
-        onProgress: (p) => U.showUploadProgress(p, `Parsing… ${Math.round(p * 100)}%`),
-      });
-      const { rows, headers, mapping, kind } = result;
-      U.showUploadProgress(1, `Validating ${rows.length.toLocaleString()} rows…`);
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        const fileBase = i / list.length;
+        U.showUploadProgress(
+          fileBase + 0.02 / list.length,
+          `Parsing ${file.name} (${i + 1}/${list.length})…`,
+        );
 
-      const missing = ['latitude', 'longitude'].filter((r) => !mapping[r]);
-      if (missing.length) {
-        U.setStatus(`✗ Missing required column(s): ${missing.join(', ')}`, 'err');
-        U.hideUploadProgress();
-        return;
-      }
-      if (!mapping.weightage) {
-        U.setStatus('⚠ No weightage column found — using 50 for all rows', 'ok');
+        const result = await window.CSVLoader.parseFile(file, {
+          onProgress: (p) => U.showUploadProgress(
+            fileBase + (p / list.length),
+            `Parsing ${file.name}… ${Math.round(p * 100)}%`,
+          ),
+        });
+        const { rows, headers, mapping } = result;
+
+        const missing = ['latitude', 'longitude'].filter((r) => !mapping[r]);
+        if (missing.length) {
+          U.setStatus(`✗ "${file.name}": missing column(s) ${missing.join(', ')}`, 'err');
+          U.hideUploadProgress();
+          return;
+        }
+        if (!mapping.weightage && i === 0) {
+          U.setStatus('⚠ No weightage column found — using 50 for missing rows', 'ok');
+        }
+
+        const { rows: canonical, stats } = window.CSVLoader.normalize(rows, headers, mapping);
+        for (const r of canonical) {
+          r._source = file.name;
+          combinedRows.push(r);
+        }
+        totalRowsIn += stats.total;
+        totalSkipped += stats.skipped;
+        if (canonical.length) {
+          weightSum += stats.weightMean * canonical.length;
+          weightedCount += canonical.length;
+          if (stats.weightMin < weightMin) weightMin = stats.weightMin;
+          if (stats.weightMax > weightMax) weightMax = stats.weightMax;
+        }
+        filenames.push(file.name);
+        if (!firstMapping) firstMapping = mapping;
+        for (const h of headers) {
+          if (!combinedHeaders.includes(h)) combinedHeaders.push(h);
+        }
       }
 
-      const { rows: canonical, stats } = window.CSVLoader.normalize(rows, headers, mapping);
-      if (canonical.length === 0) {
+      if (combinedRows.length === 0) {
         U.setStatus('✗ No valid rows after validation', 'err');
         U.hideUploadProgress();
         return;
       }
 
-      parsedRows = canonical;
-      parsedMeta = { headers, mapping, kind, stats, filename: file.name };
+      const aggregateStats = {
+        total: totalRowsIn,
+        kept: combinedRows.length,
+        skipped: totalSkipped,
+        weightMean: weightedCount ? weightSum / weightedCount : 0,
+        weightMin: Number.isFinite(weightMin) ? weightMin : 0,
+        weightMax: Number.isFinite(weightMax) ? weightMax : 0,
+      };
 
-      U.showDetectedColumns(headers, mapping, stats);
+      parsedRows = combinedRows;
+      parsedMeta = {
+        headers: combinedHeaders,
+        mapping: firstMapping,
+        stats: aggregateStats,
+        filename: list.length === 1 ? list[0].name : `${list.length} files`,
+        filenames,
+      };
+
+      const fileSummary = list.length === 1
+        ? null
+        : `${list.length} merged (${filenames.slice(0, 3).join(', ')}${filenames.length > 3 ? ', …' : ''})`;
+      U.showDetectedColumns(combinedHeaders, firstMapping, aggregateStats, fileSummary);
+      U.showUploadProgress(1, 'Done');
       setTimeout(U.hideUploadProgress, 800);
-      U.setStatus(`✓ Parsed ${stats.kept.toLocaleString()} points — press "Map Data"`, 'ok');
+      U.setStatus(
+        list.length === 1
+          ? `✓ Parsed ${aggregateStats.kept.toLocaleString()} points — press "Map Data"`
+          : `✓ Parsed ${aggregateStats.kept.toLocaleString()} points from ${list.length} files — press "Map Data"`,
+        'ok',
+      );
     } catch (err) {
       console.error(err);
       U.setStatus(`✗ Parse failed: ${err.message || err}`, 'err');
@@ -183,7 +263,7 @@
       },
       () => { if (parsedRows) mapParsedData(); }
     );
-    U.onUpload(handleFile);
+    U.onUpload(handleFiles);
     U.onMapData(mapParsedData);
     U.onClearUpload(clearUpload);
 

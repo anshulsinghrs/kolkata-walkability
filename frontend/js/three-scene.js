@@ -142,14 +142,30 @@ window.ThreeScene = (function () {
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  const materialCache = new Map();
+  let cachedBaseGeo = null;
+  function getMaterialForScore(score) {
+    const bucket = Math.max(0, Math.min(20, Math.round(score / 5)));
+    let mat = materialCache.get(bucket);
+    if (mat) return mat;
+    const color = scoreToColor(bucket * 5);
+    mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.4,
+      metalness: 0.3,
+      emissive: color,
+      emissiveIntensity: 0.15,
+    });
+    materialCache.set(bucket, mat);
+    return mat;
+  }
+
   function buildCityFromData(data) {
-    // Clear existing columns
     columns.forEach((c) => scene.remove(c));
     columns = [];
 
     if (!data || data.length === 0) return;
 
-    // Find bounds
     let minLat = Infinity, maxLat = -Infinity;
     let minLon = Infinity, maxLon = -Infinity;
     for (const pt of data) {
@@ -167,7 +183,7 @@ window.ThreeScene = (function () {
     const maxPoints = Math.min(data.length, 3000);
     const step = Math.max(1, Math.floor(data.length / maxPoints));
 
-    const baseGeo = new THREE.BoxGeometry(1, 1, 1);
+    if (!cachedBaseGeo) cachedBaseGeo = new THREE.BoxGeometry(1, 1, 1);
 
     for (let i = 0; i < data.length; i += step) {
       const pt = data[i];
@@ -179,16 +195,7 @@ window.ThreeScene = (function () {
       const height = (score / 100) * 10 * heightScale + 0.3;
       const width = 0.6 + (score / 100) * 0.4;
 
-      const color = scoreToColor(score);
-      const mat = new THREE.MeshStandardMaterial({
-        color: color,
-        roughness: 0.4,
-        metalness: 0.3,
-        emissive: color,
-        emissiveIntensity: 0.15,
-      });
-
-      const mesh = new THREE.Mesh(baseGeo, mat);
+      const mesh = new THREE.Mesh(cachedBaseGeo, getMaterialForScore(score));
       mesh.scale.set(width, height, width);
       mesh.position.set(x, height / 2, z);
       mesh.castShadow = true;
@@ -199,7 +206,6 @@ window.ThreeScene = (function () {
       scene.add(mesh);
     }
 
-    // Position avatar at center
     avatar.position.set(0, avatar.height, 0);
     camera.position.copy(avatar.position);
   }
@@ -372,7 +378,7 @@ window.ThreeScene = (function () {
         renderer.xr.setSession(null);
       });
 
-      renderer.setAnimationLoop((time, frame) => {
+      renderer.setAnimationLoop((_time, _frame) => {
         if (!isActive) return;
         const dt = Math.min(clock.getDelta(), 0.1);
         updateAvatar(dt);
