@@ -37,9 +37,18 @@ From there you can:
 - Optionally view points as a **3D landscape** (Three.js) and, on a
   supported device, enter **WebXR / VR**.
 
+**No data of your own yet?** Click **Explore Kolkata** (or the Kolkata
+quick-chip) and the app loads a built-in **synthetic** sample dataset —
+clearly labelled *Sample (synthetic)* throughout — so every panel (KPIs,
+analytics charts, score filter, colour legend, and the 3D view) is
+populated for a guided tour. It is generated procedurally from a fixed
+seed in `frontend/js/sample-data.js`; it is **not** real survey data and is
+dropped automatically the moment you navigate to another city or upload
+your own file.
+
 If a pre-baked research dataset (the old IIT Kgp PWS tiles) is present at
-`frontend/data/`, it is rendered automatically on top — but the platform
-no longer requires it.
+`frontend/data/`, that is rendered instead — but the platform no longer
+requires it.
 
 ---
 
@@ -73,6 +82,7 @@ migration plan:
 │   ├── css/style.css          # All styling (dark dashboard theme)
 │   ├── js/
 │   │   ├── config.js          # Brand, paths, defaults, geocoder constants
+│   │   ├── sample-data.js     # Built-in synthetic Kolkata demo dataset
 │   │   ├── city-search.js     # Nominatim global search (Phase-1)
 │   │   ├── color-scale.js     # Score → RGB mapping
 │   │   ├── data-loader.js     # Optional manifest + viewport-based tiles
@@ -86,6 +96,8 @@ migration plan:
 │   │   ├── three-scene.js     # 3D / WebXR mode
 │   │   ├── ui-controls.js     # Sidebar wiring
 │   │   └── app.js             # Bootstrap / orchestration
+│   ├── favicon.svg            # App icon (also used by the web manifest)
+│   ├── site.webmanifest       # PWA manifest (installable metadata)
 │   └── data/                  # (Optional) pre-baked tile dataset
 │
 ├── backend/                   # Offline data-processing scripts (Python)

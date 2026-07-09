@@ -1,0 +1,18 @@
+{
+  "name": "UrbanPulse — Urban Walkability Intelligence",
+  "short_name": "UrbanPulse",
+  "description": "Open-source global urban walkability and mobility intelligence. Search any city, layer OpenStreetMap data, recompute walkability under custom indicator weights, and export results.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B1120",
+  "theme_color": "#0B1120",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

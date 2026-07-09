@@ -4,7 +4,24 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="description" content="UrbanPulse — open-source global urban walkability and mobility intelligence platform. Search any city, layer OpenStreetMap data, recompute walkability under custom indicator weights, upload datasets, and export results. Free, self-hostable, research-grade." />
+<meta name="theme-color" content="#0B1120" />
 <title>UrbanPulse — Global Urban Walkability Intelligence</title>
+
+<!-- Icons + PWA -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="favicon.svg" />
+<link rel="manifest" href="site.webmanifest" />
+<link rel="canonical" href="https://anshulsinghrs.github.io/kolkata-walkability/" />
+
+<!-- Social preview (Open Graph / Twitter) -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="UrbanPulse" />
+<meta property="og:title" content="UrbanPulse — Global Urban Walkability Intelligence" />
+<meta property="og:description" content="Search any city, layer OpenStreetMap data, recompute walkability under custom indicator weights, and explore the results in 2D, analytics, and 3D — no API key required." />
+<meta property="og:url" content="https://anshulsinghrs.github.io/kolkata-walkability/" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="UrbanPulse — Global Urban Walkability Intelligence" />
+<meta name="twitter:description" content="Open-source, OpenStreetMap-driven urban walkability intelligence for any city in the world." />
 
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -243,7 +260,7 @@
           </svg>
           <div class="kpi-empty-msg">
             <strong>No dataset loaded</strong>
-            <span>Upload a CSV / GeoJSON, or click <em>Explore Kolkata</em> to load the research baseline.</span>
+            <span>Upload a CSV / GeoJSON, or click <em>Explore Kolkata</em> to load a synthetic sample.</span>
           </div>
         </div>
         <div class="kpi-grid" id="kpi-grid" hidden>
@@ -782,6 +799,7 @@
 
 <!-- App modules (order matters) -->
 <script src="js/config.js"></script>
+<script src="js/sample-data.js"></script>
 <script src="js/color-scale.js"></script>
 <script src="js/data-loader.js"></script>
 <script src="js/points-layer.js"></script>

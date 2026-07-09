@@ -105,8 +105,8 @@ window.UIControls = (function () {
       statCoverage.innerHTML = `${dLat.toFixed(2)}°×${dLon.toFixed(2)}°<span class="unit">bbox</span>`;
     }
   }
-  function setStatsFromUpload(stats) {
-    revealKPI('Uploaded');
+  function setStatsFromUpload(stats, tag) {
+    revealKPI(tag || 'Uploaded');
     statCount.innerHTML  = fmtCount(stats.kept);
     statMean.innerHTML   = fmtScore(stats.weightMean);
     statMedian.innerHTML = `${stats.weightMin.toFixed(0)}–${stats.weightMax.toFixed(0)}<span class="unit">range</span>`;
